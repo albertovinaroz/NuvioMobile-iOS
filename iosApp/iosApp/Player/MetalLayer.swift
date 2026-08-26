@@ -173,6 +173,14 @@ class MetalLayer: CAMetalLayer {
             return drawable
         }
 
+        #if targetEnvironment(simulator)
+        // CAMetalDrawable.addPresentedHandler is unavailable in the Simulator's Metal
+        // implementation, so invoke the handler immediately instead of on actual presentation.
+        captureLock.lock()
+        capturedDrawableCount &+= 1
+        captureLock.unlock()
+        handler(drawable)
+        #else
         drawable.addPresentedHandler { [weak self] _ in
             guard let self else { return }
             self.captureLock.lock()
@@ -180,6 +188,7 @@ class MetalLayer: CAMetalLayer {
             self.captureLock.unlock()
             handler(drawable)
         }
+        #endif
 
         return drawable
     }
