@@ -22,7 +22,7 @@
           "buildVersion": "115",
           "date": "2026-08-27T11:48:31Z",
           "localizedDescription": "# 🚀 Release v0.4.11-b1\r\n\r\nFirst public build of my Nuvio Enhanced fork, based on luqmanfadlli's `enhanced` at v0.4.11.\r\n\r\n## Added\r\n- Custom profile background image URL for any profile (not gated behind Supporter membership)\r\n\r\n## Variants\r\n\r\nThis is the Full variant (in-app updates, downloads, and trailer playback unlocked, same as Nuvio Enhanced/Nuvio Full).\r\n\r\n> **Note for iOS Users:**\r\nSince Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
-          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/v0.4.11-b1/nuvio-0.4.11-b1-full-release.ipa",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/v0.4.11-b1/Nuvio-v0.4.11-b1-Enhanced.ipa",
           "size": 66351896,
           "minOSVersion": "16.1"
         }
