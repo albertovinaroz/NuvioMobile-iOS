@@ -29,9 +29,10 @@ if [[ ! "${version}" =~ ^[0-9A-Za-z][0-9A-Za-z._-]*$ ]]; then
 fi
 
 cd "${repository_root}"
+distribution="${NUVIO_IOS_DISTRIBUTION:-full}"
 build_environment=(
     env
-    NUVIO_IOS_DISTRIBUTION=full
+    NUVIO_IOS_DISTRIBUTION="${distribution}"
     CLANG_MODULE_CACHE_PATH="${clang_module_cache}"
     SWIFTPM_MODULECACHE_OVERRIDE="${swiftpm_module_cache}"
 )
@@ -110,8 +111,8 @@ trap 'rm -rf "${package_root}"' EXIT
 mkdir -p "${package_root}/Payload"
 ditto "${app_path}" "${package_root}/Payload/${app_bundle_name}"
 
-ipa_path="${output_directory}/nuvio-${version}-full-${configuration_slug}.ipa"
-temporary_ipa="${package_root}/nuvio-${version}-full-${configuration_slug}.ipa"
+ipa_path="${output_directory}/nuvio-${version}-${distribution}-${configuration_slug}.ipa"
+temporary_ipa="${package_root}/nuvio-${version}-${distribution}-${configuration_slug}.ipa"
 (
     cd "${package_root}"
     /usr/bin/zip -qry "${temporary_ipa}" Payload
