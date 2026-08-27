@@ -30,6 +30,7 @@ fi
 
 cd "${repository_root}"
 distribution="${NUVIO_IOS_DISTRIBUTION:-full}"
+release_label="${NUVIO_RELEASE_LABEL:-${distribution}}"
 build_environment=(
     env
     NUVIO_IOS_DISTRIBUTION="${distribution}"
@@ -111,8 +112,8 @@ trap 'rm -rf "${package_root}"' EXIT
 mkdir -p "${package_root}/Payload"
 ditto "${app_path}" "${package_root}/Payload/${app_bundle_name}"
 
-ipa_path="${output_directory}/nuvio-${version}-${distribution}-${configuration_slug}.ipa"
-temporary_ipa="${package_root}/nuvio-${version}-${distribution}-${configuration_slug}.ipa"
+ipa_path="${output_directory}/nuvio-${version}-${release_label}-${configuration_slug}.ipa"
+temporary_ipa="${package_root}/nuvio-${version}-${release_label}-${configuration_slug}.ipa"
 (
     cd "${package_root}"
     /usr/bin/zip -qry "${temporary_ipa}" Payload

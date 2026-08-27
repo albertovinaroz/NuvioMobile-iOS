@@ -67,12 +67,12 @@ jobs:
           SOURCES = [
               (
                   Path("NuvioMobile-iOS-Enhanced.json"),
-                  re.compile(r"^Nuvio-v.+-Enhanced\.ipa$", re.IGNORECASE),
+                  re.compile(r"^nuvio-.+-enhanced-release\.ipa$", re.IGNORECASE),
                   "Enhanced",
               ),
               (
                   Path("NuvioMobile-iOS-Official.json"),
-                  re.compile(r"^Nuvio-v.+-Official\.ipa$", re.IGNORECASE),
+                  re.compile(r"^nuvio-.+-official-release\.ipa$", re.IGNORECASE),
                   "Official",
               ),
           ]
