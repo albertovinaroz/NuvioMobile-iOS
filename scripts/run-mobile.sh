@@ -10,8 +10,6 @@ ANDROID_ACTIVITY=".MainActivity"
 IOS_PROJECT="$ROOT_DIR/iosApp/iosApp.xcodeproj"
 IOS_SCHEME="iosApp"
 IOS_DERIVED_DATA_BASE="$ROOT_DIR/build/ios-derived"
-IOS_APP_NAME="Nuvio.app"
-IOS_BUNDLE_ID="com.nuvio.app.Nuvio"
 IOS_PREFERRED_DEVICE_MODEL="iPhone 14 Pro"
 
 usage() {
@@ -203,6 +201,25 @@ ios_derived_data_path() {
   echo "$IOS_DERIVED_DATA_BASE-$distribution-$target"
 }
 
+find_built_ios_app() {
+  local products_directory="$1"
+  local app_path
+
+  app_path="$(/usr/bin/find "$products_directory" -maxdepth 1 -type d -name '*.app' -print 2>/dev/null | head -n 1)"
+
+  if [[ -z "$app_path" ]]; then
+    echo "No .app bundle found in $products_directory" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$app_path"
+}
+
+ios_bundle_id() {
+  local app_path="$1"
+  /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist"
+}
+
 run_android_emulator() {
   local flavor="${1:-full}"
 
@@ -315,9 +332,6 @@ run_ios_simulator() {
   local derived_data_path
   derived_data_path="$(ios_derived_data_path simulator "$distribution")"
 
-  local simulator_app_path
-  simulator_app_path="$derived_data_path/Build/Products/Debug-iphonesimulator/$IOS_APP_NAME"
-
   echo "Building iOS $distribution debug app for simulator $simulator_id..."
   env NUVIO_IOS_DISTRIBUTION="$distribution" xcodebuild \
     -project "$IOS_PROJECT" \
@@ -327,16 +341,17 @@ run_ios_simulator() {
     -derivedDataPath "$derived_data_path" \
     build
 
-  if [[ ! -d "$simulator_app_path" ]]; then
-    echo "Expected iOS simulator app not found at: $simulator_app_path" >&2
-    exit 1
-  fi
+  local simulator_app_path
+  simulator_app_path="$(find_built_ios_app "$derived_data_path/Build/Products/Debug-iphonesimulator")"
+
+  local bundle_id
+  bundle_id="$(ios_bundle_id "$simulator_app_path")"
 
   echo "Installing on simulator $simulator_id..."
   xcrun simctl install "$simulator_id" "$simulator_app_path"
 
   echo "Launching app..."
-  xcrun simctl launch "$simulator_id" "$IOS_BUNDLE_ID"
+  xcrun simctl launch "$simulator_id" "$bundle_id"
 }
 
 run_ios_physical() {
@@ -358,9 +373,6 @@ run_ios_physical() {
     local derived_data_path
     derived_data_path="$(ios_derived_data_path device "$distribution")"
 
-    local device_app_path
-    device_app_path="$derived_data_path/Build/Products/Debug-iphoneos/$IOS_APP_NAME"
-
     if [[ "$physical_device_model" == "$IOS_PREFERRED_DEVICE_MODEL" ]]; then
       echo "Using preferred iOS physical device: ${physical_device_name:-$physical_device_id} ($physical_device_model)"
     else
@@ -377,16 +389,17 @@ run_ios_physical() {
       -derivedDataPath "$derived_data_path" \
       build
 
-    if [[ ! -d "$device_app_path" ]]; then
-      echo "Expected iOS app not found at: $device_app_path" >&2
-      exit 1
-    fi
+    local device_app_path
+    device_app_path="$(find_built_ios_app "$derived_data_path/Build/Products/Debug-iphoneos")"
+
+    local bundle_id
+    bundle_id="$(ios_bundle_id "$device_app_path")"
 
     echo "Installing on physical device $physical_device_id..."
     xcrun devicectl device install app --device "$physical_device_id" "$device_app_path"
 
     echo "Launching app..."
-    xcrun devicectl device process launch --device "$physical_device_id" "$IOS_BUNDLE_ID"
+    xcrun devicectl device process launch --device "$physical_device_id" "$bundle_id"
     return
   fi
 

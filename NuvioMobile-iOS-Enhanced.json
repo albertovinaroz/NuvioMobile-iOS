@@ -19,11 +19,11 @@
       "versions": [
         {
           "version": "0.4.11-b1",
-          "buildVersion": "115",
-          "date": "2026-08-27T11:48:31Z",
-          "localizedDescription": "## Nuvio Enhanced 0.4.11-b1\r\n\r\nFirst public build of my Nuvio Enhanced fork, based on luqmanfadlli's `enhanced` at 0.4.11.\r\n\r\n### Upstream changelog\r\n- feat(livetv): add Xtream and Stalker providers @asrma7\r\n- fix(trailer): use token-free clients and make probes decisive @luqmanfadlli\r\n\r\n### Enhanced changelog\r\n- All changes from the upstream\r\n- feat(profile): custom background image URL for any profile @albertovinaroz\r\n\r\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.\r\n\r\n> **Note:** Trakt and SIMKL integrations are currently not working in this build — I'm missing the API credentials needed to register them (Trakt now requires a paid VIP membership to create a client). Working on getting this fixed.",
+          "buildVersion": "116",
+          "date": "2026-08-27T19:15:00Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b1\r\n\r\nFirst public build of my Nuvio Enhanced fork, based on luqmanfadlli's `enhanced` at 0.4.11.\r\n\r\n### Upstream changelog\r\n- feat(livetv): add Xtream and Stalker providers @asrma7\r\n- fix(trailer): use token-free clients and make probes decisive @luqmanfadlli\r\n\r\n### Enhanced changelog\r\n- All changes from the upstream\r\n- feat(profile): custom background image URL for any profile @albertovinaroz\r\n\r\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.\r\n\r\n> **Note:** SIMKL integration is now working. Trakt is still pending — I'm missing the API credentials needed to register a client (it now requires a paid VIP membership). Working on getting this fixed.",
           "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b1/nuvio-0.4.11-b1-enhanced-release.ipa",
-          "size": 66411499,
+          "size": 66412417,
           "minOSVersion": "16.1"
         }
       ]
