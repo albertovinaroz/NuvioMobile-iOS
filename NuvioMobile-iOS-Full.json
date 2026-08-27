@@ -1,0 +1,32 @@
+{
+  "name": "Nuvio Full (albertovinaroz)",
+  "subtitle": "Unmodified official Nuvio builds for AltStore and SideStore.",
+  "description": "Update channel for an unmodified build of the official NuvioMedia source.",
+  "website": "https://github.com/albertovinaroz/NuvioMobile-iOS",
+  "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+  "tintColor": "7B2FF7",
+  "news": [],
+  "apps": [
+    {
+      "name": "Nuvio",
+      "bundleIdentifier": "com.nuvio.media",
+      "developerName": "NuvioMedia",
+      "subtitle": "Watch your library, anywhere",
+      "localizedDescription": "Unmodified build of the official Nuvio Mobile source for iOS and iPadOS, with in-app updates, downloads, and trailer playback unlocked.",
+      "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+      "tintColor": "7B2FF7",
+      "category": "entertainment",
+      "versions": [
+        {
+          "version": "0.4.11",
+          "buildVersion": "115",
+          "date": "2026-08-27T14:21:00Z",
+          "localizedDescription": "Unmodified build of the official NuvioMedia source (cmp-rewrite), version 0.4.11, full distribution flavor (in-app updates, downloads, and trailer playback unlocked).",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/full-0.4.11/Nuvio-v0.4.11-Full.ipa",
+          "size": 51668346,
+          "minOSVersion": "16.1"
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-name: Update AltStore source
+name: Update AltStore sources
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: update-altstore-source
+  group: update-altstore-sources
   cancel-in-progress: false
 
 env:
@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Update AltStore source
+      - name: Update AltStore sources
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EVENT_NAME: ${{ github.event_name }}
@@ -61,10 +61,21 @@ jobs:
           EVENT_NAME = os.environ.get("EVENT_NAME", "")
           RELEASE_ID = os.environ.get("RELEASE_ID", "").strip()
 
-          SOURCE_PATH = Path("NuvioMobile-iOS.json")
-          ASSET_PATTERN = re.compile(
-              r"^Nuvio-v.+-Enhanced\.ipa$", re.IGNORECASE
-          )
+          # Each release only ever carries ONE of these two variants (Full
+          # releases and Enhanced releases are published separately), so a
+          # release matching only one pattern is expected, not an error.
+          SOURCES = [
+              (
+                  Path("NuvioMobile-iOS-Enhanced.json"),
+                  re.compile(r"^Nuvio-v.+-Enhanced\.ipa$", re.IGNORECASE),
+                  "Enhanced",
+              ),
+              (
+                  Path("NuvioMobile-iOS-Full.json"),
+                  re.compile(r"^Nuvio-v.+-Full\.ipa$", re.IGNORECASE),
+                  "Full",
+              ),
+          ]
 
           API_HEADERS = {
               "User-Agent": "nuvio-altstore-updater",
@@ -133,11 +144,11 @@ jobs:
               return url, release
 
 
-          def find_asset(release):
+          def find_asset(release, pattern):
               matches = [
                   asset
                   for asset in release.get("assets", [])
-                  if ASSET_PATTERN.fullmatch(
+                  if pattern.fullmatch(
                       asset.get("name", "")
                   )
               ]
@@ -149,7 +160,7 @@ jobs:
                   )
 
                   sys.exit(
-                      f"Multiple Enhanced IPA assets matched: {names}"
+                      f"Multiple IPA assets matched {pattern.pattern}: {names}"
                   )
 
               if not matches:
@@ -158,25 +169,22 @@ jobs:
               return matches[0]
 
 
-          def wait_for_asset(release_url, release):
-              for attempt in range(21):
-                  asset = find_asset(release)
+          def wait_for_asset(release_url, release, pattern, label):
+              for attempt in range(4):
+                  asset = find_asset(release, pattern)
 
                   if asset:
                       return release, asset
 
-                  if attempt == 20:
-                      sys.exit(
-                          "Missing required Enhanced IPA asset "
-                          "after waiting."
-                      )
+                  if attempt == 3:
+                      return release, None
 
                   print(
-                      "Waiting for Enhanced IPA asset, "
-                      f"attempt {attempt + 1}/20..."
+                      f"Waiting for {label} IPA asset, "
+                      f"attempt {attempt + 1}/3..."
                   )
 
-                  time.sleep(30)
+                  time.sleep(10)
                   release = request_json(release_url)
 
               raise AssertionError("unreachable")
@@ -280,7 +288,7 @@ jobs:
               return source, app
 
 
-          def update_source(path, release, asset):
+          def update_source(path, label, release, asset):
               source, app = load_source(path)
 
               blob = download_asset(asset)
@@ -291,7 +299,7 @@ jobs:
                   != EXPECTED_BUNDLE_ID
               ):
                   sys.exit(
-                      "Enhanced IPA bundle ID is "
+                      f"{label} IPA bundle ID is "
                       f"{metadata['bundleIdentifier']!r}, expected "
                       f"{EXPECTED_BUNDLE_ID!r}."
                   )
@@ -320,7 +328,7 @@ jobs:
 
                   if missing:
                       print(
-                          "~ Enhanced: dropping legacy "
+                          f"~ {label}: dropping legacy "
                           f"versions[{index}] missing "
                           + ", ".join(missing)
                       )
@@ -358,7 +366,7 @@ jobs:
                           file.write("\n")
 
                   print(
-                      "- Enhanced: already current "
+                      f"- {label}: already current "
                       f"({version} build {build_version})"
                   )
 
@@ -374,7 +382,7 @@ jobs:
                   == build_version
               ):
                   sys.exit(
-                      "Enhanced: asset changed but version/build "
+                      f"{label}: asset changed but version/build "
                       f"remained {version} ({build_version}). "
                       "Increment CFBundleVersion."
                   )
@@ -384,7 +392,7 @@ jobs:
               ).strip()
 
               if not notes:
-                  notes = f"Nuvio Enhanced {version}."
+                  notes = f"Nuvio {label} {version}."
 
               entry = {
                   "version": version,
@@ -436,7 +444,7 @@ jobs:
                   file.write("\n")
 
               print(
-                  f"+ Enhanced: {version} "
+                  f"+ {label}: {version} "
                   f"build {build_version} "
                   f"({asset['name']})"
               )
@@ -519,37 +527,47 @@ jobs:
 
           release_url, release = get_release()
 
-          release, asset = wait_for_asset(
-              release_url,
-              release
-          )
+          any_matched = False
+          any_changed = False
 
-          changed = update_source(
-              SOURCE_PATH,
-              release,
-              asset
-          )
+          for path, pattern, label in SOURCES:
+              release, asset = wait_for_asset(
+                  release_url, release, pattern, label
+              )
 
-          validate_source(SOURCE_PATH)
+              if asset is None:
+                  print(f"- {label}: no matching asset in this release, skipping.")
+                  continue
+
+              any_matched = True
+              changed = update_source(path, label, release, asset)
+              any_changed = any_changed or changed
+              validate_source(path)
+
+          if not any_matched:
+              sys.exit(
+                  "No asset in this release matched a known Full/Enhanced "
+                  "IPA naming pattern."
+              )
 
           print(
-              "Source updated."
-              if changed
+              "Source(s) updated."
+              if any_changed
               else "No source changes."
           )
           PY
 
-      - name: Commit and push AltStore source
+      - name: Commit and push AltStore sources
         run: |
-          if git diff --quiet -- NuvioMobile-iOS.json; then
+          if git diff --quiet -- NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Full.json; then
             echo "No AltStore source changes."
             exit 0
           fi
 
-          git add NuvioMobile-iOS.json
+          git add NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Full.json
 
           git commit -m \
-            "chore: update AltStore source $(date -u +%Y-%m-%dT%H:%MZ)"
+            "chore: update AltStore source(s) $(date -u +%Y-%m-%dT%H:%MZ)"
 
           git pull --rebase origin enhanced
           git push origin "HEAD:enhanced"
