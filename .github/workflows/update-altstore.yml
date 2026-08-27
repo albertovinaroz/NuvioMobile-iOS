@@ -71,9 +71,9 @@ jobs:
                   "Enhanced",
               ),
               (
-                  Path("NuvioMobile-iOS-Full.json"),
-                  re.compile(r"^Nuvio-v.+-Full\.ipa$", re.IGNORECASE),
-                  "Full",
+                  Path("NuvioMobile-iOS-Official.json"),
+                  re.compile(r"^Nuvio-v.+-Official\.ipa$", re.IGNORECASE),
+                  "Official",
               ),
           ]
 
@@ -559,12 +559,12 @@ jobs:
 
       - name: Commit and push AltStore sources
         run: |
-          if git diff --quiet -- NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Full.json; then
+          if git diff --quiet -- NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Official.json; then
             echo "No AltStore source changes."
             exit 0
           fi
 
-          git add NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Full.json
+          git add NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Official.json
 
           git commit -m \
             "chore: update AltStore source(s) $(date -u +%Y-%m-%dT%H:%MZ)"
