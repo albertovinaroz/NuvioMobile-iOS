@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b3",
+          "buildVersion": "118",
+          "date": "2026-08-28T12:10:10Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b3\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- feat(downloads): require Wi-Fi for downloads unless mobile data is allowed @albertovinaroz — closes [#52](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/issues/52)\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.\n\n> **Note:** SIMKL integration is working. Trakt is still pending — I'm missing the API credentials needed to register a client (it now requires a paid VIP membership). Working on getting this fixed.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b3/nuvio-0.4.11-b3-enhanced-release.ipa",
+          "size": 66403906,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b2",
           "buildVersion": "117",
           "date": "2026-08-28T09:40:14Z",
