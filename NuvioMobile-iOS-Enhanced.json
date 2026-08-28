@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b6",
+          "buildVersion": "121",
+          "date": "2026-08-28T23:34:40Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b6\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- feat(tabbar): dragging across tabs while the bar is expanded now uses the real system tab bar, fixing sticky/glitchy dragging and a flicker during the floating-pill-to-bar handoff @albertovinaroz\n- feat(profiles): switching profiles now plays a smooth animated transition @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b6/nuvio-0.4.11-b6-enhanced-release.ipa",
+          "size": 66450734,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b5",
           "buildVersion": "120",
           "date": "2026-08-28T16:13:35Z",
