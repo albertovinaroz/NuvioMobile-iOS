@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b4",
+          "buildVersion": "119",
+          "date": "2026-08-28T13:59:39Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b4\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- Trakt and SIMKL integration is now fully working with official API credentials\n\nCredit and thanks to @luqmanfadlli for helping me with this integration.\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b4/nuvio-0.4.11-b4-enhanced-release.ipa",
+          "size": 66402740,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b3",
           "buildVersion": "118",
           "date": "2026-08-28T12:10:10Z",
