@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b5",
+          "buildVersion": "120",
+          "date": "2026-08-28T16:13:35Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b5\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- feat(home): autoplay trailers in the hero carousel, like in Details — toggle it in Settings → Layout → Home Layout @albertovinaroz\n- feat(home): add a quick \"add to watchlist\" button next to \"View Details\" on the hero @albertovinaroz\n- fix(home): stop hero trailer playback when leaving Home (Details, another item, or switching tabs) @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b5/nuvio-0.4.11-b5-enhanced-release.ipa",
+          "size": 66425074,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b4",
           "buildVersion": "119",
           "date": "2026-08-28T13:59:39Z",
