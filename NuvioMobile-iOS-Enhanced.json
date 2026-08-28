@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b2",
+          "buildVersion": "117",
+          "date": "2026-08-28T09:40:14Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b2\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- feat(home): add catalog accent underline toggle @albertovinaroz — closes [#58](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/issues/58)\n- fix(player): let Next Episode reuse the auto-selected source @albertovinaroz — closes [#70](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/issues/70)\n- fix(ios): restore native morphed tab interaction @Arad00ak — from [#74](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/pull/74)\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.\n\n> **Note:** SIMKL integration is working. Trakt is still pending — I'm missing the API credentials needed to register a client (it now requires a paid VIP membership). Working on getting this fixed.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b2/nuvio-0.4.11-b2-enhanced-release.ipa",
+          "size": 66385784,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b1",
           "buildVersion": "116",
           "date": "2026-08-27T19:15:00Z",
