@@ -20,7 +20,7 @@ jobs:
             const repo = context.repo.repo;
 
             const NEEDS_INFO = "needs-info";
-            const CLOSE_AFTER_DAYS = 1;
+            const CLOSE_AFTER_DAYS = 7;
 
             const closeMarker = "<!-- nuvio-bot:stale-close -->";
 
@@ -66,7 +66,7 @@ jobs:
                 if (!hasClosedComment) {
                   const body =
                     `${closeMarker}\n` +
-                    `Closing this bug report since we didn't get the requested details within 1 day.\n\n` +
+                    `Closing this bug report since we didn't get the requested details within ${CLOSE_AFTER_DAYS} days.\n\n` +
                     `If you can share the missing info, reply here and we can reopen.`;
                   await github.rest.issues.createComment({ owner, repo, issue_number, body });
                 }
