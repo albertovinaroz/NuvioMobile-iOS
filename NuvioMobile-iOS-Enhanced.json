@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b8",
+          "buildVersion": "123",
+          "date": "2026-08-29T18:03:52Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b8\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- fix(settings): Contributors now shows real GitHub data instead of an empty list @albertovinaroz\n- fix(settings): Check for Updates now points at this repo instead of the upstream fork @albertovinaroz\n- fix(downloads): download rows now match the app's card styling and accent color @albertovinaroz\n- fix(ui): Library and the update banner now match the app's card styling across all themes @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b8/nuvio-0.4.11-b8-enhanced-release.ipa",
+          "size": 66463264,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b7",
           "buildVersion": "122",
           "date": "2026-08-29T10:20:13Z",
