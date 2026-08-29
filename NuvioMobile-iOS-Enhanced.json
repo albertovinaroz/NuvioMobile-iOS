@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.11-b7",
+          "buildVersion": "122",
+          "date": "2026-08-29T10:20:13Z",
+          "localizedDescription": "## Nuvio Enhanced 0.4.11-b7\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n### Changelog\n- feat(profiles): Edit Profile now opens with the same native slide transition as the rest of Settings, instead of a non-native crossfade @albertovinaroz\n- fix(downloads): the \"Allow mobile data\" toggle now matches the color of every other toggle in the app, and a separator was added between it and the downloads list @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.11-b7/nuvio-0.4.11-b7-enhanced-release.ipa",
+          "size": 66449324,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b6",
           "buildVersion": "121",
           "date": "2026-08-28T23:34:40Z",
