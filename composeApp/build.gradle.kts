@@ -168,7 +168,11 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |package com.nuvio.app.features.settings
                 |
                 |object CommunityConfig {
-                |    const val CONTRIBUTIONS_URL = "${props.getProperty("CONTRIBUTIONS_URL", "")}" 
+                |    // No custom aggregator backend is available to forks (it's private to the
+                |    // upstream project), so this defaults to GitHub's own public "list repository
+                |    // contributors" API for this fork's own repo — no secret/config needed. The
+                |    // parsing in SupportersContributorsPage.kt understands both response shapes.
+                |    const val CONTRIBUTIONS_URL = "${props.getProperty("CONTRIBUTIONS_URL", "https://api.github.com/repos/albertovinaroz/NuvioMobile-iOS/contributors?per_page=100")}"
                 |    const val SUPPORTERS_WALL_URL = "${props.getProperty("SUPPORTERS_WALL_URL", "https://nuvio.tv/api/supporters/wall")}"
                 |    const val DONATIONS_BASE_URL = "${props.getProperty("DONATIONS_BASE_URL", "")}" 
                 |    const val DONATIONS_DONATE_URL = "${props.getProperty("DONATIONS_DONATE_URL", "")}" 

@@ -23,7 +23,7 @@ import kotlinx.coroutines.runBlocking
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
 
-private const val gitHubOwner = "luqmanfadlli"
+private const val gitHubOwner = "albertovinaroz"
 private const val gitHubRepo = "NuvioMobile-iOS"
 private const val gitHubApiBase = "https://api.github.com"
 private const val releaseChannelBranch = "enhanced"

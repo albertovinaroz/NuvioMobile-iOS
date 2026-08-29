@@ -57,6 +57,7 @@ import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.features.addons.httpRequestRaw
 import com.nuvio.app.features.membership.MembershipOverviewRepository
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -96,6 +97,19 @@ private data class ContributionDto(
     val avatar: String? = null,
     val profile: String? = null,
     val total: Int? = null,
+)
+
+/** GitHub's own "list repository contributors" REST API shape — a flat array, unlike the
+ * `{"contributors": [...]}` wrapper the legacy/custom backend used above. This is what
+ * [CommunityConfig.CONTRIBUTIONS_URL] points to by default now, so any fork gets a working
+ * Contributors list against its own repo with no backend/secret to configure. */
+@Serializable
+private data class GitHubContributorDto(
+    val login: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("html_url") val htmlUrl: String? = null,
+    val contributions: Int? = null,
+    val type: String? = null,
 )
 
 @Serializable
@@ -163,20 +177,34 @@ private object SupportersContributorsRepository {
         val response = httpRequestRaw(
             method = "GET",
             url = contributionsUrl,
-            headers = emptyMap(),
+            headers = mapOf(
+                "Accept" to "application/vnd.github+json",
+                "User-Agent" to "NuvioMobile",
+            ),
             body = "",
         )
         if (response.status !in 200..299) {
             error(getString(Res.string.community_error_contributors_request_failed))
         }
 
-        json.decodeFromString<ContributionsResponseDto>(response.body)
-            .contributors
-            .mapNotNull(::normalizeContributor)
+        parseContributors(response.body)
             .sortedWith(
                 compareByDescending<CommunityContributor> { it.totalContributions }
                     .thenBy { it.login.lowercase() },
             )
+    }
+
+    private fun parseContributors(body: String): List<CommunityContributor> {
+        // Try GitHub's flat-array shape first (the new default), falling back to the legacy
+        // wrapped-object shape for anyone who's configured CONTRIBUTIONS_URL to point at the
+        // original custom backend instead.
+        runCatching { json.decodeFromString<List<GitHubContributorDto>>(body) }
+            .getOrNull()
+            ?.let { contributors -> return contributors.mapNotNull(::normalizeGitHubContributor) }
+
+        return json.decodeFromString<ContributionsResponseDto>(body)
+            .contributors
+            .mapNotNull(::normalizeContributor)
     }
 
     suspend fun getSupporters(): Result<SupportersResult> = runCatching {
@@ -249,6 +277,21 @@ private object SupportersContributorsRepository {
             login = login,
             avatarUrl = dto.avatar?.trim()?.takeIf { it.isNotBlank() },
             profileUrl = dto.profile?.trim()?.takeIf { it.isNotBlank() },
+            totalContributions = contributions,
+        )
+    }
+
+    private fun normalizeGitHubContributor(dto: GitHubContributorDto): CommunityContributor? {
+        val login = dto.login?.trim().orEmpty()
+        val contributions = dto.contributions ?: 0
+        if (login.isBlank() || contributions <= 0 || dto.type.equals("Bot", ignoreCase = true)) {
+            return null
+        }
+
+        return CommunityContributor(
+            login = login,
+            avatarUrl = dto.avatarUrl?.trim()?.takeIf { it.isNotBlank() },
+            profileUrl = dto.htmlUrl?.trim()?.takeIf { it.isNotBlank() },
             totalContributions = contributions,
         )
     }
