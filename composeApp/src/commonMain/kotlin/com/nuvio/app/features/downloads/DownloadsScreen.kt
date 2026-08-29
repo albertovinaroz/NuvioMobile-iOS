@@ -18,12 +18,12 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +42,8 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.features.settings.SettingsGroup
+import com.nuvio.app.features.settings.SettingsSwitchRow
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -149,41 +151,19 @@ private fun AllowMobileDataDownloadsRow() {
         DownloadsSettingsRepository.allowMobileDataDownloads
     }.collectAsStateWithLifecycle()
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+    // Reuses the same card + switch row used by every other settings toggle in the app (Meta
+    // screen, Homescreen, etc.) instead of a one-off Surface, so the color matches.
+    SettingsGroup(
+        isTablet = false,
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { DownloadsSettingsRepository.setAllowMobileDataDownloads(!allowMobileData) }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = stringResource(Res.string.downloads_allow_mobile_data_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(Res.string.downloads_allow_mobile_data_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = allowMobileData,
-                onCheckedChange = DownloadsSettingsRepository::setAllowMobileDataDownloads,
-            )
-        }
+        SettingsSwitchRow(
+            title = stringResource(Res.string.downloads_allow_mobile_data_title),
+            description = stringResource(Res.string.downloads_allow_mobile_data_description),
+            checked = allowMobileData,
+            isTablet = false,
+            onCheckedChange = DownloadsSettingsRepository::setAllowMobileDataDownloads,
+        )
     }
 }
 
@@ -207,6 +187,13 @@ private fun LazyListScope.downloadsRootContent(
 
     item {
         AllowMobileDataDownloadsRow()
+    }
+
+    item {
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
     }
 
     if (activeItems.isNotEmpty()) {
