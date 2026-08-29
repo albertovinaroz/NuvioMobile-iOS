@@ -94,6 +94,7 @@ import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.core.ui.ScopedDisintegrationTracker
+import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
 import com.nuvio.app.features.cloud.CloudLibraryFile
 import com.nuvio.app.features.cloud.CloudLibraryItem
@@ -834,7 +835,7 @@ private fun LibraryChip(
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
-        color = if (selected) colorScheme.primaryContainer else colorScheme.surfaceContainerLow,
+        color = if (selected) colorScheme.primaryContainer else MaterialTheme.nuvio.colors.surface,
         border = if (selected) BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.45f)) else null,
     ) {
         Row(
@@ -882,8 +883,8 @@ private fun CloudLibraryRow(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable(enabled = playableCount > 0, onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.nuvio.shapes.compactCard,
+        color = MaterialTheme.nuvio.colors.surface,
     ) {
         Column(
             modifier = Modifier
@@ -955,8 +956,8 @@ private fun CloudLibraryFilePicker(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.nuvio.shapes.compactCard,
+        color = MaterialTheme.nuvio.colors.surface,
     ) {
         Column(
             modifier = Modifier
@@ -1031,7 +1032,7 @@ private fun CloudLibraryFileRow(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f),
+        color = MaterialTheme.nuvio.colors.surface.copy(alpha = 0.58f),
     ) {
         Column(
             modifier = Modifier
@@ -1163,8 +1164,8 @@ private fun CloudLibrarySkeletonRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.nuvio.shapes.compactCard,
+        color = MaterialTheme.nuvio.colors.surface,
     ) {
         Column(
             modifier = Modifier
@@ -1626,11 +1627,11 @@ private fun LibraryCalendarCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.nuvio.colors.surface,
         shape = RoundedCornerShape(28.dp),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f),
+            MaterialTheme.nuvio.colors.borderSubtle.copy(alpha = 0.48f),
         ),
     ) {
         Column(
@@ -1671,7 +1672,7 @@ private fun LibraryCalendarCard(
                 }
                 Surface(
                     modifier = Modifier.clickable(onClick = onToday),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    color = MaterialTheme.nuvio.colors.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     shape = RoundedCornerShape(50),
                 ) {
@@ -1856,7 +1857,7 @@ private fun LibraryCalendarAgendaHeader(
             )
         }
         Surface(
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = MaterialTheme.nuvio.colors.surface,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             shape = RoundedCornerShape(50),
         ) {
@@ -1882,11 +1883,11 @@ private fun libraryCalendarReleaseCountText(count: Int): String =
 private fun LibraryCalendarNoDayEvents() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.nuvio.colors.surface,
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+            MaterialTheme.nuvio.colors.borderSubtle.copy(alpha = 0.4f),
         ),
     ) {
         Row(
@@ -1942,11 +1943,11 @@ private fun LibraryCalendarEventRow(
     }
     Surface(
         modifier = modifier.padding(bottom = 10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.nuvio.colors.surface,
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f),
+            MaterialTheme.nuvio.colors.borderSubtle.copy(alpha = 0.38f),
         ),
     ) {
         Row(
@@ -2007,7 +2008,7 @@ private fun LibraryCalendarEventArtwork(event: LibraryCalendarEvent) {
         modifier = Modifier
             .size(width = 104.dp, height = 62.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            .background(MaterialTheme.nuvio.colors.surface),
         contentAlignment = Alignment.Center,
     ) {
         if (!event.imageUrl.isNullOrBlank()) {

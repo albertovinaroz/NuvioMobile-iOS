@@ -175,7 +175,7 @@ private fun AppUpdateBanner(
         animationSpec = tween(durationMillis = 180),
         label = "updateBannerProgress",
     )
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val containerColor = MaterialTheme.nuvio.colors.surface
     val isWhiteTheme = MaterialTheme.appTheme == AppTheme.WHITE
     val progressColor = if (isWhiteTheme) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
@@ -358,7 +358,7 @@ private fun ReleaseNotesDialog(
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                HorizontalDivider(color = MaterialTheme.nuvio.colors.borderSubtle)
 
                 Text(
                     text = update.notes.ifBlank { stringResource(Res.string.updates_no_release_notes) },
