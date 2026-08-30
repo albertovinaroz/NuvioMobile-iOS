@@ -72,6 +72,7 @@ import com.nuvio.app.core.ui.posterCardClickable
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaEpisodeCardStyle
 import com.nuvio.app.features.details.MetaVideo
+import com.nuvio.app.features.details.OmdbEpisodeRatingsService
 import com.nuvio.app.features.details.SeasonViewMode
 import com.nuvio.app.features.details.SeasonViewModeStorage
 import com.nuvio.app.features.details.formatRuntimeFromMinutes
@@ -1008,13 +1009,18 @@ private fun TmdbEpisodeRatingBadge(
     logoSize: Dp,
     textSize: androidx.compose.ui.unit.TextUnit,
 ) {
+    // Named for its original TMDB-only source; now shows IMDb's rating (via OMDb's per-season
+    // bulk endpoint) whenever the build has an OMDb key configured, falling back to TMDB's own
+    // vote average per-episode when OMDb has no data for it. The badge itself always reads
+    // "IMDb" in that case rather than tracking provenance per episode.
+    val showsImdbRating = OmdbEpisodeRatingsService.hasApiKey
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            painter = painterResource(Res.drawable.rating_tmdb),
-            contentDescription = stringResource(Res.string.source_tmdb),
+            painter = painterResource(if (showsImdbRating) Res.drawable.rating_imdb else Res.drawable.rating_tmdb),
+            contentDescription = stringResource(if (showsImdbRating) Res.string.source_imdb else Res.string.source_tmdb),
             modifier = Modifier.size(logoSize),
             contentScale = ContentScale.Fit,
         )
@@ -1024,7 +1030,7 @@ private fun TmdbEpisodeRatingBadge(
                 fontSize = textSize,
                 fontWeight = FontWeight.SemiBold,
             ),
-            color = Color(0xFF01B4E4),
+            color = if (showsImdbRating) Color(0xFFF5C518) else Color(0xFF01B4E4),
             maxLines = 1,
         )
     }
