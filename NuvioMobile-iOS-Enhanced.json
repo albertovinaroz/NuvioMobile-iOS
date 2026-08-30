@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.12-b1",
+          "buildVersion": "124",
+          "date": "2026-08-30T17:43:21Z",
+          "localizedDescription": "# Nuvio Enhanced 0.4.12-b1\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n## Changelog\n\n### Upstream (NuvioMedia, via luqmanfadlli's Enhanced fork)\n- feat(auth): add six-character login codes @tapframe\n- feat(home): add configurable hero trailer start delay @luqmanfadlli\n- fix(tmdb): fall back to English/Romaji cast and crew names when native script returned @halibiram\n- fix(profile-insights): correct watch time and clarify title-based stats @luqmanfadlli\n- fix(player): keep controls hidden on playback start @tapframe\n- Port NuvioTV fixes: multi-language trailer audio, scrobble guard for short/error clips, aggregate credits @skoruppa\n- i18n(el): translate sign-in with link strings @nosvasedis\n\n### Enhanced\n- feat(details): show IMDb ratings on episodes instead of TMDB @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.12-b1/nuvio-0.4.12-b1-enhanced-release.ipa",
+          "size": 66568886,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11-b8",
           "buildVersion": "123",
           "date": "2026-08-29T18:03:52Z",
