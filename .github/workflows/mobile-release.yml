@@ -46,6 +46,7 @@ jobs:
     outputs:
       tag: ${{ steps.release.outputs.tag }}
       version: ${{ steps.release.outputs.version }}
+      release_commit: ${{ steps.release.outputs.release_commit }}
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_PROPERTIES_BASE64: ${{ secrets.NUVIO_LOCAL_PROPERTIES_BASE64 }}
@@ -66,12 +67,23 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
           CURRENT_BUMP: ${{ steps.release.outputs.current_bump }}
           RELEASE_COMMIT: ${{ steps.release.outputs.release_commit }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           RELEASE_REF_TYPE: ${{ github.ref_type }}
           RELEASE_MODE: ${{ inputs.mode }}
         run: |
           if [[ "${RELEASE_REF_TYPE}" != "branch" ]]; then
             echo "Releases must be dispatched from a branch, not ${RELEASE_REF_TYPE}." >&2
             exit 1
+          fi
+          if [[ "${RELEASE_MODE}" == "draft" || "${RELEASE_MODE}" == "publish" ]]; then
+            if [[ "${RELEASE_BRANCH}" != "${DEFAULT_BRANCH}" ]]; then
+              echo "Mode '${RELEASE_MODE}' creates a tag, so it must be dispatched from the default branch (${DEFAULT_BRANCH})." >&2
+              echo "Use mode 'test-build' to build '${RELEASE_BRANCH}' without tagging." >&2
+              exit 1
+            fi
+          else
+            echo "Mode '${RELEASE_MODE}' on branch '${RELEASE_BRANCH}': no tag or release will be created."
           fi
 
           if [[ "${RELEASE_MODE}" != "test-build" ]]; then
@@ -287,7 +299,7 @@ jobs:
       RELEASE_MODE: ${{ inputs.mode }}
       RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
       RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
-      RELEASE_BRANCH: ${{ github.ref_name }}
+      RELEASE_COMMIT: ${{ needs.prepare.outputs.release_commit }}
 
     steps:
       - name: Download release artifacts
@@ -306,7 +318,8 @@ jobs:
 
           release_args=(
             "${RELEASE_TAG}"
-            --target "${RELEASE_BRANCH}"
+            --repo "${GITHUB_REPOSITORY}"
+            --target "${RELEASE_COMMIT}"
             --title "${RELEASE_VERSION}"
             --notes-file release-assets/release-notes.md
           )

@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -197,6 +198,7 @@ private fun LazyListScope.downloadsRootContent(
             color = MaterialTheme.nuvio.colors.borderSubtle,
         )
     }
+
 
     if (activeItems.isNotEmpty()) {
         item {
