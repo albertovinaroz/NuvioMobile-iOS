@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.12",
+          "buildVersion": "116",
+          "date": "2026-08-30T15:27:30Z",
+          "localizedDescription": "## Nuvio Unmodified 0.4.12\n\nUnmodified build of the NuvioMedia source. Not affiliated with or endorsed by NuvioMedia.\n\n### Changelog\n- feat(auth): add six-character login codes @tapframe\n- feat(store): automate sideload source updates @tapframe\n- fix(tmdb): use multiplatform map insertion @tapframe\n- i18n(el): translate sign-in with link strings @nosvasedis",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.12/nuvio-0.4.12-official-release.ipa",
+          "size": 51715565,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.11",
           "buildVersion": "116",
           "date": "2026-08-27T19:15:00Z",
