@@ -708,7 +708,9 @@ object TmdbMetadataService {
             episodeMap.orEmpty()
         } else {
             episodeMap.orEmpty().mapValues { (key, episode) ->
-                imdbEpisodeRatings[key]?.let { imdbRating -> episode.copy(voteAverage = imdbRating) } ?: episode
+                imdbEpisodeRatings[key]?.let { imdbRating ->
+                    episode.copy(voteAverage = imdbRating, voteAverageIsImdb = true)
+                } ?: episode
             }
         }
 
@@ -894,6 +896,15 @@ object TmdbMetadataService {
                                 enrichmentForEpisode.voteAverage?.takeIf { it > 0.0 } ?: video.tmdbRating
                             } else {
                                 null
+                            },
+                            ratingIsImdb = if (settings.useEpisodeRatings) {
+                                if (enrichmentForEpisode.voteAverage != null) {
+                                    enrichmentForEpisode.voteAverageIsImdb
+                                } else {
+                                    video.ratingIsImdb
+                                }
+                            } else {
+                                false
                             },
                         )
                     }
@@ -1486,6 +1497,8 @@ internal data class TmdbEpisodeEnrichment(
     val airDate: String?,
     val runtimeMinutes: Int?,
     val voteAverage: Double? = null,
+    /** True when [voteAverage] was overridden with IMDb's own rating (via OMDb). */
+    val voteAverageIsImdb: Boolean = false,
 )
 
 private fun normalizeMetaType(type: String): String =

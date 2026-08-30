@@ -72,7 +72,6 @@ import com.nuvio.app.core.ui.posterCardClickable
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaEpisodeCardStyle
 import com.nuvio.app.features.details.MetaVideo
-import com.nuvio.app.features.details.OmdbEpisodeRatingsService
 import com.nuvio.app.features.details.SeasonViewMode
 import com.nuvio.app.features.details.SeasonViewModeStorage
 import com.nuvio.app.features.details.formatRuntimeFromMinutes
@@ -324,6 +323,7 @@ fun DetailSeriesContent(
                                     fallbackImage = meta.background ?: meta.poster,
                                     progressEntry = progressByVideoId[episodeVideoId],
                                     tmdbRating = episode.tmdbRating,
+                                    ratingIsImdb = episode.ratingIsImdb,
                                     isWatched = progressByVideoId[episodeVideoId]?.isEffectivelyCompleted == true ||
                                         WatchingState.isEpisodeWatched(
                                             watchedKeys = watchedKeys,
@@ -655,6 +655,7 @@ private fun EpisodeHorizontalRow(
                 fallbackImage = fallbackImage,
                 progressEntry = progressByVideoId[episodeVideoId],
                 tmdbRating = episode.tmdbRating,
+                ratingIsImdb = episode.ratingIsImdb,
                 isWatched = progressByVideoId[episodeVideoId]?.isEffectivelyCompleted == true ||
                     WatchingState.isEpisodeWatched(
                         watchedKeys = watchedKeys,
@@ -678,6 +679,7 @@ private fun EpisodeHorizontalCard(
     fallbackImage: String?,
     progressEntry: WatchProgressEntry?,
     tmdbRating: Double?,
+    ratingIsImdb: Boolean,
     isWatched: Boolean,
     blurUnwatchedEpisodes: Boolean,
     metrics: EpisodeHorizontalCardMetrics,
@@ -813,6 +815,7 @@ private fun EpisodeHorizontalCard(
                     ratingLabel?.let { rating ->
                         TmdbEpisodeRatingBadge(
                             rating = rating,
+                            isImdb = ratingIsImdb,
                             logoSize = metrics.tmdbLogoSize,
                             textSize = metrics.metaTextSize,
                         )
@@ -1006,21 +1009,20 @@ private fun EpisodeCodeBadge(
 @Composable
 private fun TmdbEpisodeRatingBadge(
     rating: String,
+    isImdb: Boolean,
     logoSize: Dp,
     textSize: androidx.compose.ui.unit.TextUnit,
 ) {
     // Named for its original TMDB-only source; now shows IMDb's rating (via OMDb's per-season
-    // bulk endpoint) whenever the build has an OMDb key configured, falling back to TMDB's own
-    // vote average per-episode when OMDb has no data for it. The badge itself always reads
-    // "IMDb" in that case rather than tracking provenance per episode.
-    val showsImdbRating = OmdbEpisodeRatingsService.hasApiKey
+    // bulk endpoint) when it actually came from IMDb, falling back to TMDB's own logo/color for
+    // the episodes where OMDb had no data and TMDB's own vote average was used instead.
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            painter = painterResource(if (showsImdbRating) Res.drawable.rating_imdb else Res.drawable.rating_tmdb),
-            contentDescription = stringResource(if (showsImdbRating) Res.string.source_imdb else Res.string.source_tmdb),
+            painter = painterResource(if (isImdb) Res.drawable.rating_imdb else Res.drawable.rating_tmdb),
+            contentDescription = stringResource(if (isImdb) Res.string.source_imdb else Res.string.source_tmdb),
             modifier = Modifier.size(logoSize),
             contentScale = ContentScale.Fit,
         )
@@ -1030,7 +1032,7 @@ private fun TmdbEpisodeRatingBadge(
                 fontSize = textSize,
                 fontWeight = FontWeight.SemiBold,
             ),
-            color = if (showsImdbRating) Color(0xFFF5C518) else Color(0xFF01B4E4),
+            color = if (isImdb) Color(0xFFF5C518) else Color(0xFF01B4E4),
             maxLines = 1,
         )
     }
@@ -1043,6 +1045,7 @@ private fun EpisodeListCard(
     fallbackImage: String?,
     progressEntry: WatchProgressEntry?,
     tmdbRating: Double?,
+    ratingIsImdb: Boolean,
     isWatched: Boolean,
     blurUnwatchedEpisodes: Boolean,
     sizing: SeriesContentSizing,
@@ -1164,6 +1167,7 @@ private fun EpisodeListCard(
                         ratingLabel?.let { rating ->
                             TmdbEpisodeRatingBadge(
                                 rating = rating,
+                                isImdb = ratingIsImdb,
                                 logoSize = 12.dp,
                                 textSize = sizing.metaTextSize,
                             )

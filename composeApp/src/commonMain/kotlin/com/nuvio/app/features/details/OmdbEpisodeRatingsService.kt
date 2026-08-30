@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -17,15 +18,26 @@ import kotlinx.serialization.json.Json
  * per-season endpoint (`?i=ttXXXX&Season=N`) — one request per season instead of one per
  * episode, matched to how [com.nuvio.app.features.tmdb.TmdbMetadataService] already fetches
  * TMDB season details in parallel.
+ *
+ * Ratings are cached to disk (not just in memory) since they almost never change once a
+ * season has aired, and the shared per-build OMDb key is rate-limited — every rating already
+ * on disk is one less request drawn from that quota on the next app launch.
  */
 internal object OmdbEpisodeRatingsService {
+    /** Oldest entries are evicted first once this many season-rating sets are cached. */
+    private const val MaxCachedSeasons = 400
+
     private val log = Logger.withTag("OmdbEpisodeRatings")
     private val json = Json { ignoreUnknownKeys = true }
     private val imdbIdRegex = Regex("tt\\d+")
-    private val seasonCache = mutableMapOf<String, Map<Int, Double>>()
+
+    // LinkedHashMap preserves insertion order across all KMP targets, so evicting the
+    // first entries once over the cap behaves as a simple oldest-in/first-out cache.
+    private val seasonCache = LinkedHashMap<String, Map<Int, Double>>()
+    private var hasLoadedFromDisk = false
 
     val hasApiKey: Boolean
-        get() = ImdbEpisodeRatingsConfig.OMDB_API_KEY.isNotBlank()
+        get() = OmdbSettingsRepository.effectiveApiKey().isNotBlank()
 
     fun extractImdbId(vararg candidates: String?): String? =
         candidates.firstNotNullOfOrNull { candidate ->
@@ -37,11 +49,13 @@ internal object OmdbEpisodeRatingsService {
         imdbId: String,
         seasonNumbers: List<Int>,
     ): Map<Pair<Int, Int>, Double> = withContext(Dispatchers.Default) {
-        val apiKey = ImdbEpisodeRatingsConfig.OMDB_API_KEY.trim()
+        val apiKey = OmdbSettingsRepository.effectiveApiKey()
         if (apiKey.isBlank()) return@withContext emptyMap()
 
         val normalizedSeasons = seasonNumbers.distinct().sorted()
         if (normalizedSeasons.isEmpty()) return@withContext emptyMap()
+
+        ensureLoadedFromDisk()
 
         val perSeason = coroutineScope {
             normalizedSeasons.map { season ->
@@ -52,6 +66,22 @@ internal object OmdbEpisodeRatingsService {
         perSeason.flatMap { (season, episodeRatings) ->
             episodeRatings.map { (episode, rating) -> (season to episode) to rating }
         }.toMap()
+    }
+
+    private fun ensureLoadedFromDisk() {
+        if (hasLoadedFromDisk) return
+        hasLoadedFromDisk = true
+        val payload = OmdbEpisodeRatingsStorage.loadPayload()?.trim().orEmpty()
+        if (payload.isEmpty()) return
+        runCatching { json.decodeFromString<Map<String, Map<Int, Double>>>(payload) }
+            .onSuccess { seasonCache.putAll(it) }
+            .onFailure { error -> log.w { "Failed to load cached IMDb ratings: ${error.message}" } }
+    }
+
+    private fun persistToDisk() {
+        val payload = runCatching { json.encodeToString<Map<String, Map<Int, Double>>>(seasonCache) }
+            .getOrNull() ?: return
+        OmdbEpisodeRatingsStorage.savePayload(payload)
     }
 
     private suspend fun fetchSeason(
@@ -85,6 +115,11 @@ internal object OmdbEpisodeRatingsService {
 
         if (ratings.isNotEmpty()) {
             seasonCache[cacheKey] = ratings
+            while (seasonCache.size > MaxCachedSeasons) {
+                val oldestKey = seasonCache.keys.firstOrNull() ?: break
+                seasonCache.remove(oldestKey)
+            }
+            persistToDisk()
         }
         return ratings
     }

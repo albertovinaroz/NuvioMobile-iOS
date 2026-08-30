@@ -80,6 +80,7 @@ import com.nuvio.app.features.trakt.TraktCommentsSettings
 import com.nuvio.app.features.tracking.TrackingSettingsRepository
 import com.nuvio.app.features.tracking.TrackingSettingsUiState
 import com.nuvio.app.features.tmdb.TmdbSettings
+import com.nuvio.app.features.details.OmdbSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesUiState
@@ -175,6 +176,10 @@ fun SettingsScreen(
         val tmdbSettings by remember {
             TmdbSettingsRepository.ensureLoaded()
             TmdbSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val omdbApiKey by remember {
+            OmdbSettingsRepository.ensureLoaded()
+            OmdbSettingsRepository.apiKey
         }.collectAsStateWithLifecycle()
         val mdbListSettings by remember {
             MdbListSettingsRepository.ensureLoaded()
@@ -428,6 +433,7 @@ fun SettingsScreen(
                 onNavBarStyleSelected = ThemeSettingsRepository::setNavBarStyle,
                 episodeReleaseNotificationsUiState = episodeReleaseNotificationsUiState,
                 tmdbSettings = tmdbSettings,
+                omdbApiKey = omdbApiKey,
                 mdbListSettings = mdbListSettings,
                 debridSettings = debridSettings,
                 liveTvUiState = liveTvUiState,
@@ -500,6 +506,7 @@ fun SettingsScreen(
                 onNavBarStyleSelected = ThemeSettingsRepository::setNavBarStyle,
                 episodeReleaseNotificationsUiState = episodeReleaseNotificationsUiState,
                 tmdbSettings = tmdbSettings,
+                omdbApiKey = omdbApiKey,
                 mdbListSettings = mdbListSettings,
                 debridSettings = debridSettings,
                 liveTvUiState = liveTvUiState,
@@ -582,6 +589,7 @@ private fun MobileSettingsScreen(
     onNavBarStyleSelected: (NavBarStyle) -> Unit,
     episodeReleaseNotificationsUiState: EpisodeReleaseNotificationsUiState,
     tmdbSettings: TmdbSettings,
+    omdbApiKey: String,
     mdbListSettings: MdbListSettings,
     debridSettings: DebridSettings,
     liveTvUiState: com.nuvio.app.features.livetv.LiveTvUiState,
@@ -861,6 +869,7 @@ private fun MobileSettingsScreen(
                     onDebridClick = { onPageChange(SettingsPage.Debrid) },
                     onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
                     onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
+                    onOmdbClick = { onPageChange(SettingsPage.Omdb) },
                     onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                 )
                 SettingsPage.Debrid -> debridSettingsContent(
@@ -882,6 +891,10 @@ private fun MobileSettingsScreen(
                 SettingsPage.MdbListRatings -> mdbListSettingsContent(
                     isTablet = false,
                     settings = mdbListSettings,
+                )
+                SettingsPage.Omdb -> omdbSettingsContent(
+                    isTablet = false,
+                    apiKey = omdbApiKey,
                 )
                 SettingsPage.LiveTv -> liveTvSettingsContent(
                     isTablet = false,
@@ -981,6 +994,7 @@ private fun TabletSettingsScreen(
     onNavBarStyleSelected: (NavBarStyle) -> Unit,
     episodeReleaseNotificationsUiState: EpisodeReleaseNotificationsUiState,
     tmdbSettings: TmdbSettings,
+    omdbApiKey: String,
     mdbListSettings: MdbListSettings,
     debridSettings: DebridSettings,
     liveTvUiState: com.nuvio.app.features.livetv.LiveTvUiState,
@@ -1315,6 +1329,7 @@ private fun TabletSettingsScreen(
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
                         onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
                         onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
+                        onOmdbClick = { onPageChange(SettingsPage.Omdb) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                     )
                     SettingsPage.Debrid -> debridSettingsContent(
@@ -1336,6 +1351,10 @@ private fun TabletSettingsScreen(
                     SettingsPage.MdbListRatings -> mdbListSettingsContent(
                         isTablet = true,
                         settings = mdbListSettings,
+                    )
+                    SettingsPage.Omdb -> omdbSettingsContent(
+                        isTablet = true,
+                        apiKey = omdbApiKey,
                     )
                     SettingsPage.LiveTv -> liveTvSettingsContent(
                         isTablet = true,
