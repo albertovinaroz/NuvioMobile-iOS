@@ -74,6 +74,10 @@ fun ProfileSelectionScreen(
     onAddProfile: () -> Unit,
     interactionEnabled: Boolean = true,
     contentVisible: Boolean = true,
+    // Non-null only for a guest who chose "Continue Without Account" — gives them a visible,
+    // explicit way back to the login form instead of the only prior option (creating a profile,
+    // then digging through Settings > Account to find "Sign In with an Account" there).
+    onSignInWithAccount: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
@@ -304,6 +308,21 @@ fun ProfileSelectionScreen(
                         color = if (isEditMode) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold,
+                    )
+                }
+
+                if (onSignInWithAccount != null) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = stringResource(Res.string.settings_account_sign_in_with_account),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .graphicsLayer { alpha = manageAlpha.value }
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable(enabled = interactionEnabled, onClick = onSignInWithAccount)
+                            .padding(horizontal = 24.dp, vertical = 10.dp),
                     )
                 }
 

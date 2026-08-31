@@ -44,6 +44,9 @@ import nuvio.composeapp.generated.resources.settings_account_delete_confirm_mess
 import nuvio.composeapp.generated.resources.settings_account_delete_confirm_title
 import nuvio.composeapp.generated.resources.settings_account_email
 import nuvio.composeapp.generated.resources.settings_account_not_signed_in
+import nuvio.composeapp.generated.resources.settings_account_sign_in_with_account
+import nuvio.composeapp.generated.resources.settings_account_sign_in_with_account_confirm_message
+import nuvio.composeapp.generated.resources.settings_account_sign_in_with_account_confirm_title
 import nuvio.composeapp.generated.resources.settings_account_sign_out
 import nuvio.composeapp.generated.resources.settings_account_sign_out_confirm_message
 import nuvio.composeapp.generated.resources.settings_account_sign_out_confirm_title
@@ -72,6 +75,10 @@ private fun AccountSettingsBody(
     var deleteErrorMessage by remember { mutableStateOf<String?>(null) }
     val deleteAccountFallbackMessage = stringResource(Res.string.auth_account_deletion_failed)
     val canDeleteAccount = AppFeaturePolicy.accountDeletionEnabled && authState is AuthState.Authenticated
+    // "Continue Without Account" has no dedicated escape hatch of its own — this is the only path
+    // back to the sign-in form. Guests reading "Sign Out" here tend not to recognize it as that
+    // path (they never felt "signed in" to begin with), so relabel it for them specifically.
+    val isAnonymousGuest = (authState as? AuthState.Authenticated)?.isAnonymous == true
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         NuvioSurfaceCard {
@@ -113,7 +120,11 @@ private fun AccountSettingsBody(
         }
 
         NuvioPrimaryButton(
-            text = stringResource(Res.string.settings_account_sign_out),
+            text = if (isAnonymousGuest) {
+                stringResource(Res.string.settings_account_sign_in_with_account)
+            } else {
+                stringResource(Res.string.settings_account_sign_out)
+            },
             onClick = { showSignOutConfirm = true },
         )
 
@@ -129,10 +140,22 @@ private fun AccountSettingsBody(
     }
 
     NuvioStatusModal(
-        title = stringResource(Res.string.settings_account_sign_out_confirm_title),
-        message = stringResource(Res.string.settings_account_sign_out_confirm_message),
+        title = if (isAnonymousGuest) {
+            stringResource(Res.string.settings_account_sign_in_with_account_confirm_title)
+        } else {
+            stringResource(Res.string.settings_account_sign_out_confirm_title)
+        },
+        message = if (isAnonymousGuest) {
+            stringResource(Res.string.settings_account_sign_in_with_account_confirm_message)
+        } else {
+            stringResource(Res.string.settings_account_sign_out_confirm_message)
+        },
         isVisible = showSignOutConfirm,
-        confirmText = stringResource(Res.string.settings_account_sign_out),
+        confirmText = if (isAnonymousGuest) {
+            stringResource(Res.string.settings_account_sign_in_with_account)
+        } else {
+            stringResource(Res.string.settings_account_sign_out)
+        },
         dismissText = stringResource(Res.string.action_cancel),
         onConfirm = {
             showSignOutConfirm = false

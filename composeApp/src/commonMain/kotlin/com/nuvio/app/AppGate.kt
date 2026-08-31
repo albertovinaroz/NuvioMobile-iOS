@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,7 +33,6 @@ import com.nuvio.app.core.network.NetworkStatusRepository
 import com.nuvio.app.core.sync.SyncManager
 import com.nuvio.app.core.ui.NativeProfileSwitcherController
 import com.nuvio.app.core.ui.NativeTabBridge
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.PlatformBackHandler
 import com.nuvio.app.core.ui.nuvio
@@ -45,6 +45,7 @@ import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.profiles.ProfileSelectionScreen
 import com.nuvio.app.features.profiles.profileAvatarImageUrl
 import com.nuvio.app.navigation.AppRoute
+import kotlinx.coroutines.launch
 
 private enum class AppGateScreen {
     Loading,
@@ -157,7 +158,19 @@ internal fun AppGate(
         )
     }
 
+    val gateScope = rememberCoroutineScope()
     var gateScreen by rememberSaveable { mutableStateOf(AppGateScreen.Loading.name) }
+    // Keeps the intro (rendered for AppGateScreen.Loading, below) on screen for a guaranteed
+    // minimum stretch even when auth/profile state resolves near-instantly underneath it (e.g.
+    // warm cache), so it always reads as a deliberate brand moment rather than a flash that may
+    // or may not appear depending on network speed. Gates the actual cold-start resolution effect
+    // further down, not just what's rendered — so every other effect keyed on `gateScreen`
+    // (onAppReady, native tab bar visibility, etc.) stays consistent with what's on screen.
+    var introHoldElapsed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(AppIntroMinDurationMs)
+        introHoldElapsed = true
+    }
     var editingProfile by remember { mutableStateOf<NuvioProfile?>(null) }
     var profileEditReturnScreen by rememberSaveable { mutableStateOf(AppGateScreen.ProfileSelection.name) }
     var autoSkipProfileSelection by rememberSaveable { mutableStateOf(false) }
@@ -373,7 +386,8 @@ internal fun AppGate(
         }
     }
 
-    LaunchedEffect(authState, networkStatusUiState.condition, profileState.profiles) {
+    LaunchedEffect(authState, networkStatusUiState.condition, profileState.profiles, introHoldElapsed) {
+        if (!introHoldElapsed) return@LaunchedEffect
         val cachedProfiles = profileState.profiles
         val hasCachedProfileAccess =
             cachedProfiles.isNotEmpty() &&
@@ -500,14 +514,7 @@ internal fun AppGate(
         ) { currentGate ->
             when (currentGate) {
                 AppGateScreen.Loading.name -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.nuvio.colors.background),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        NuvioLoadingIndicator(color = MaterialTheme.nuvio.colors.accent)
-                    }
+                    AppIntroContent(modifier = Modifier.fillMaxSize())
                 }
                 AppGateScreen.Auth.name -> {
                     AuthScreen(modifier = Modifier.fillMaxSize())
@@ -520,14 +527,31 @@ internal fun AppGate(
                     )
                 }
                 AppGateScreen.ProfileEdit.name -> {
-                    val returnFromProfileEdit = { gateScreen = profileEditReturnScreen }
+                    // A brand-new anonymous guest with no profiles yet lands here straight from
+                    // "Continue Without Account" — creating a profile is mandatory before this
+                    // point, so profileEditReturnScreen is ProfileSelection, but that screen has
+                    // nothing to show them but the same "add a profile" prompt with no way out
+                    // either. Cancelling out of profile creation in that specific situation should
+                    // undo the guest choice and return to the login form, not loop back into it.
+                    val returnFromProfileEdit = {
+                        val isForcedGuestProfileCreation =
+                            profileEditReturnScreen == AppGateScreen.ProfileSelection.name &&
+                                profileState.profiles.isEmpty() &&
+                                (authState as? AuthState.Authenticated)?.isAnonymous == true
+                        if (isForcedGuestProfileCreation) {
+                            gateScope.launch { AuthRepository.signOut() }
+                        } else {
+                            gateScreen = profileEditReturnScreen
+                        }
+                        Unit
+                    }
                     PlatformBackHandler(enabled = gateScreen == AppGateScreen.ProfileEdit.name) {
                         returnFromProfileEdit()
                     }
                     ProfileEditScreen(
                         profile = editingProfile,
                         onBack = returnFromProfileEdit,
-                        onSaved = returnFromProfileEdit,
+                        onSaved = { gateScreen = profileEditReturnScreen },
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -627,6 +651,11 @@ internal fun AppGate(
                         skipProfileSelectionEnterAnimation = false
                         profileEditReturnScreen = AppGateScreen.ProfileSelection.name
                         gateScreen = AppGateScreen.ProfileEdit.name
+                    },
+                    onSignInWithAccount = if ((authState as? AuthState.Authenticated)?.isAnonymous == true) {
+                        { gateScope.launch { AuthRepository.signOut() } }
+                    } else {
+                        null
                     },
                     interactionEnabled = !profileSelectionLoading,
                     // Also gated on `gateScreen`, not just `profileSelectionTransitionActive`:

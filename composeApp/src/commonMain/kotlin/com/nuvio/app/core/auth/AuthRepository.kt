@@ -36,6 +36,13 @@ object AuthRepository {
     private var initialized = false
     private var sessionStatusJob: Job? = null
     private var validatedRemoteUserId: String? = null
+    // Set right after an interactive sign-in/sign-up succeeds. The resulting session doesn't need
+    // the network round trip in validateRemoteSession() below — we just created it ourselves, it's
+    // definitionally valid. Without this, that extra round trip (or a false positive from
+    // isInvalidRemoteSessionError) could silently revert a fresh, successful sign-in back to
+    // Unauthenticated with the user still staring at the login screen and no visible error.
+    // Consumed once by the sessionStatus collector's first Authenticated emission after it's set.
+    private var trustNextSessionWithoutValidation = false
 
     fun initialize() {
         if (initialized) return
@@ -82,6 +89,11 @@ object AuthRepository {
 
     private suspend fun validateRemoteSession(userId: String): Boolean {
         if (userId.isBlank() || validatedRemoteUserId == userId) return true
+        if (trustNextSessionWithoutValidation) {
+            trustNextSessionWithoutValidation = false
+            validatedRemoteUserId = userId
+            return true
+        }
 
         return runCatching {
             SupabaseProvider.client.auth.retrieveUserForCurrentSession(false)
@@ -117,6 +129,7 @@ object AuthRepository {
             this.email = email
             this.password = password
         }
+        trustNextSessionWithoutValidation = true
         Unit
     }.onFailure { e ->
         log.e(e) { "Email sign-up failed" }
@@ -130,6 +143,7 @@ object AuthRepository {
             this.email = email
             this.password = password
         }
+        trustNextSessionWithoutValidation = true
     }.onFailure { e ->
         log.e(e) { "Email sign-in failed" }
         _error.value = e.safeAuthErrorDescription()
