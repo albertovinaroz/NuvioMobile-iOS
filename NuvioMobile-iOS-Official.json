@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.13",
+          "buildVersion": "117",
+          "date": "2026-08-31T08:09:29Z",
+          "localizedDescription": "## Nuvio Unmodified 0.4.13\r\n\r\nUnmodified build of the NuvioMedia source. Not affiliated with or endorsed by NuvioMedia.\r\n\r\n### Changelog\r\n- feat(details): parse addon certifications @tapframe\r\n- fix(details): parse addon season posters @tapframe\r\n- fix(player): support multiline ttml cues @tapframe\r\n- fix(ui): handle delayed addon content states @tapframe\r\n- fix(android): adjust launcher icon scale @tapframe\r\n- feat(player): apply member gradients to player accents @tapframe\r\n- fix(player): reset subtitle selection on source change @guuilp",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.13/nuvio-0.4.13-official-release.ipa",
+          "size": 51724881,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.12",
           "buildVersion": "116",
           "date": "2026-08-30T15:27:30Z",
