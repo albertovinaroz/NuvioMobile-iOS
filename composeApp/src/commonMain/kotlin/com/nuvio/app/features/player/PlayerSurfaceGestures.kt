@@ -45,6 +45,7 @@ internal fun Modifier.playerSurfaceDragGestures(
     sideGestureSystemEdgeExclusionPx: Float,
     playerControlsLockedState: State<Boolean>,
     touchGesturesEnabledState: State<Boolean>,
+    swipeToSeekEnabledState: State<Boolean>,
     isHoldToSpeedGestureActiveState: State<Boolean>,
     currentPositionMsState: State<Long>,
     currentDurationMsState: State<Long>,
@@ -122,10 +123,13 @@ internal fun Modifier.playerSurfaceDragGestures(
                         viewConfiguration.touchSlop * PlayerVerticalGestureTouchSlopMultiplier,
                         height * PlayerVerticalGestureMinHeightFraction,
                     )
+                    val horizontalGestureActivationSlop =
+                        viewConfiguration.touchSlop * PlayerHorizontalGestureTouchSlopMultiplier
                     val horizontalDominant =
                         !holdToSpeedActive &&
-                            abs(totalDx) > viewConfiguration.touchSlop &&
-                            abs(totalDx) > abs(totalDy)
+                            swipeToSeekEnabledState.value &&
+                            abs(totalDx) > horizontalGestureActivationSlop &&
+                            abs(totalDx) > abs(totalDy) * PlayerHorizontalGestureDominanceRatio
                     val verticalDominant =
                         !holdToSpeedActive &&
                             abs(totalDy) > verticalGestureActivationSlop &&

@@ -80,6 +80,8 @@ import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.platformExitApp
 import com.nuvio.app.features.addons.AddAddonResult
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.features.addons.isWaitingForFirstEnabledManifest
 import com.nuvio.app.features.catalog.CatalogTarget
 import com.nuvio.app.features.cloud.CloudLibraryContentType
 import com.nuvio.app.features.cloud.CloudLibraryFile
@@ -96,9 +98,13 @@ import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.downloads.DownloadItem
 import com.nuvio.app.features.downloads.DownloadsRepository
 import com.nuvio.app.features.home.HomeCatalogSection
+import com.nuvio.app.features.home.HomeCatalogSettingsRepository
+import com.nuvio.app.features.home.HomeRepository
+import com.nuvio.app.features.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.features.home.components.HomeHeroTrailerPlaybackController
 import com.nuvio.app.features.home.components.shouldBlurContinueWatchingArtwork
 import com.nuvio.app.features.library.LibraryItem
+import com.nuvio.app.features.library.LibraryReleaseCalendarScreen
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.LibrarySection
 import com.nuvio.app.features.library.LibrarySortOption
@@ -192,7 +198,6 @@ internal fun MainAppContent(
     appGateController: AppGateController? = null,
     onRootContentReady: ((Boolean) -> Unit)? = null,
     onSwitchProfile: () -> Unit = {},
-    onEditProfile: () -> Unit = {},
 ) {
         val navBackStack = rememberNavBackStack(navigationSavedStateConfiguration, initialRoute)
         val routeDisposalDecorator = remember {
@@ -323,13 +328,10 @@ internal fun MainAppContent(
     val pluginsSettingsTitle = stringResource(Res.string.compose_settings_page_plugins)
     val accountSettingsTitle = stringResource(Res.string.compose_settings_page_account)
     val editProfileTitle = stringResource(Res.string.profile_edit_edit_title)
-    // Pushes Edit Profile as a real native-navigation destination (see entry<ProfileEditRoute>
-    // below) instead of the old Compose-only crossfade the app gate used to switch to, so it gets
-    // the same native slide push/pop transition as every other settings screen. Falls back to the
-    // gate-driven crossfade on layouts without native navigation (tablet / non-iOS).
     val pushEditProfile: () -> Unit = { navController.navigate(ProfileEditRoute(editProfileTitle)) }
     val supportersSettingsTitle = stringResource(Res.string.compose_settings_page_supporters_contributors)
     val licensesSettingsTitle = stringResource(Res.string.compose_settings_page_licenses_attributions)
+    val libraryCalendarTitle = stringResource(Res.string.library_calendar_title)
     val collectionsTitle = stringResource(Res.string.collections_header)
     val newCollectionTitle = stringResource(Res.string.collections_new)
     val detailsFallbackTitle = stringResource(Res.string.meta_section_details_title)
@@ -347,6 +349,17 @@ internal fun MainAppContent(
     var networkToastBaselineReady by rememberSaveable { mutableStateOf(false) }
     var lastNetworkToastCondition by rememberSaveable { mutableStateOf(NetworkCondition.Unknown.name) }
     var watchSourceReconnectPending by remember { mutableStateOf(false) }
+    val homeCatalogRefreshKey = remember(addonsUiState.addons) {
+        buildAddonCatalogRefreshSignature(addonsUiState.addons)
+    }
+
+    LaunchedEffect(appContentGeneration, homeCatalogRefreshKey) {
+        if (!ownsAppRuntime) return@LaunchedEffect
+        val enabledAddons = addonsUiState.addons.enabledAddons()
+        if (enabledAddons.isWaitingForFirstEnabledManifest()) return@LaunchedEffect
+        HomeCatalogSettingsRepository.syncCatalogs(enabledAddons)
+        HomeRepository.refresh(enabledAddons)
+    }
 
     fun activateTab(tab: AppScreenTab) {
         val destination = if (tab == AppScreenTab.LiveTv && !showLiveTvInNavigation) {
@@ -1154,6 +1167,12 @@ internal fun MainAppContent(
             LibrarySourceMode.SIMKL -> stringResource(Res.string.compose_catalog_subtitle_simkl_library)
         }
 
+        val openLibraryItem: (LibraryItem) -> Unit = { item ->
+            navController.navigate(
+                DetailRoute(type = item.type, id = item.id, title = item.name),
+            )
+        }
+
         val onLibrarySectionViewAllClick: (LibrarySection, LibrarySortOption) -> Unit = { section, sortOption ->
             val launchId = CatalogLaunchStore.put(
                 CatalogLaunch(
@@ -1376,11 +1395,7 @@ internal fun MainAppContent(
                                 onPosterLongClick = { meta ->
                                     openPosterActions(PosterActionTarget(preview = meta))
                                 },
-                                onLibraryPosterClick = { item ->
-                                    navController.navigate(
-                                        DetailRoute(type = item.type, id = item.id, title = item.name),
-                                    )
-                                },
+                                onLibraryPosterClick = openLibraryItem,
                                 onLibraryPosterLongClick = { item, section ->
                                     openPosterActions(
                                         PosterActionTarget(
@@ -1391,6 +1406,9 @@ internal fun MainAppContent(
                                     )
                                 },
                                 onLibrarySectionViewAllClick = onLibrarySectionViewAllClick,
+                                onOpenLibraryCalendar = {
+                                    navController.navigate(LibraryCalendarRoute(libraryCalendarTitle))
+                                },
                                 onCloudFilePlay = { item, file ->
                                     coroutineScope.launch {
                                         val resumeItem = WatchProgressRepository
@@ -1430,11 +1448,7 @@ internal fun MainAppContent(
                                 onContinueWatchingLongPress = onContinueWatchingLongPress,
                                 onLiveTvChannelClick = onLiveTvChannelClick,
                                 onSwitchProfile = onSwitchProfile,
-                                onEditProfile = if (useNativeNavigation && !isTabletLayout) {
-                                    pushEditProfile
-                                } else {
-                                    onEditProfile
-                                },
+                                onEditProfile = pushEditProfile,
                                 onSettingsPageClick = if (useNativeNavigation && !isTabletLayout) {
                                     { pageName, title ->
                                         navController.navigate(SettingsPageRoute(pageName, title))
@@ -1608,10 +1622,15 @@ internal fun MainAppContent(
                             AppFeaturePolicy.inAppUpdaterEnabled && AppUpdaterPlatform.isDebugBuild
                         ) appUpdaterController::showDebugTestUpdate else null,
                         onSwitchProfile = onSwitchProfile,
-                        // This route is only ever reached by pushing it (see onSettingsPageClick
-                        // above), which only happens when native navigation is active and we're
-                        // not on the tablet layout — so Edit Profile can always push natively too.
                         onEditProfile = pushEditProfile,
+                    )
+                }
+                entry<LibraryCalendarRoute> { route ->
+                    val onBack = rememberGuardedPopBackStack(navController, route)
+                    LibraryReleaseCalendarScreen(
+                        onBack = onBack,
+                        onPosterClick = openLibraryItem,
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
                 entry<ProfileEditRoute> { route ->

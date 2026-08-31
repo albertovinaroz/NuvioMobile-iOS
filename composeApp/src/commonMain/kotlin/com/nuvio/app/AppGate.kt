@@ -106,9 +106,6 @@ internal fun AppGate(
             onSwitchProfile = appGateController?.let { controller ->
                 controller::requestProfileSelection
             } ?: {},
-            onEditProfile = appGateController?.let { controller ->
-                controller::requestProfileEdit
-            } ?: {},
         )
         return
     }
@@ -163,7 +160,6 @@ internal fun AppGate(
     var gateScreen by rememberSaveable { mutableStateOf(AppGateScreen.Loading.name) }
     var editingProfile by remember { mutableStateOf<NuvioProfile?>(null) }
     var profileEditReturnScreen by rememberSaveable { mutableStateOf(AppGateScreen.ProfileSelection.name) }
-    var pendingSettingsProfileReturn by rememberSaveable { mutableStateOf(false) }
     var autoSkipProfileSelection by rememberSaveable { mutableStateOf(false) }
     var profileSelectionLoading by rememberSaveable { mutableStateOf(false) }
     var profileSelectionTransitionActive by rememberSaveable { mutableStateOf(false) }
@@ -269,15 +265,6 @@ internal fun AppGate(
             profileSelectionTransitionActive = false
             skipProfileSelectionEnterAnimation = true
             gateScreen = AppGateScreen.ProfileSelection.name
-        }
-    }
-
-    LaunchedEffect(appGateController, renderMainContent) {
-        if (renderMainContent) return@LaunchedEffect
-        appGateController?.profileEditRequests?.collect {
-            editingProfile = ProfileRepository.state.value.activeProfile
-            profileEditReturnScreen = AppGateScreen.Main.name
-            gateScreen = AppGateScreen.ProfileEdit.name
         }
     }
 
@@ -500,11 +487,6 @@ internal fun AppGate(
             !profileSelectionLoading &&
             overlaysHidden
         onAppReady?.invoke(ready)
-        if (ready && pendingSettingsProfileReturn) {
-            pendingSettingsProfileReturn = false
-            appGateController?.requestSettingsPage("Profile")
-            onActivate?.invoke(AppScreenTab.Settings)
-        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -538,12 +520,7 @@ internal fun AppGate(
                     )
                 }
                 AppGateScreen.ProfileEdit.name -> {
-                    val returnFromProfileEdit = {
-                        gateScreen = profileEditReturnScreen
-                        if (profileEditReturnScreen == AppGateScreen.Main.name) {
-                            pendingSettingsProfileReturn = true
-                        }
-                    }
+                    val returnFromProfileEdit = { gateScreen = profileEditReturnScreen }
                     PlatformBackHandler(enabled = gateScreen == AppGateScreen.ProfileEdit.name) {
                         returnFromProfileEdit()
                     }
@@ -584,12 +561,6 @@ internal fun AppGate(
                                 profileSelectionTransitionActive = false
                                 skipProfileSelectionEnterAnimation = false
                                 gateScreen = AppGateScreen.ProfileSelection.name
-                            },
-                            onEditProfile = {
-                                editingProfile = profileState.activeProfile
-                                skipProfileSelectionEnterAnimation = false
-                                profileEditReturnScreen = AppGateScreen.Main.name
-                                gateScreen = AppGateScreen.ProfileEdit.name
                             },
                         )
                     }
