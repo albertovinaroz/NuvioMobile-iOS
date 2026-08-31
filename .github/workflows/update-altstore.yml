@@ -2,6 +2,17 @@ name: Update AltStore sources
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to sync (empty = latest release)
+        required: false
+        type: string
+      channel:
+        description: Which source to update (auto = detect from assets, like a real release event)
+        required: false
+        type: choice
+        options: [auto, enhanced, official]
+        default: auto
   release:
     types: [published]
 
@@ -41,8 +52,8 @@ jobs:
       - name: Update AltStore sources
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EVENT_NAME: ${{ github.event_name }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           python3 - <<'PY'
           import io
@@ -58,8 +69,17 @@ jobs:
 
           REPO = os.environ["SOURCE_REPO"]
           EXPECTED_BUNDLE_ID = os.environ["EXPECTED_BUNDLE_ID"]
-          EVENT_NAME = os.environ.get("EVENT_NAME", "")
           RELEASE_TAG = os.environ.get("RELEASE_TAG", "").strip()
+
+          # "auto" (the default, and always what a real `release` event gets)
+          # detects which of the two variants below is present, retrying for
+          # a few seconds in case the asset upload hasn't landed yet. A
+          # manual dispatch that already knows which channel it just
+          # published skips both the guessing and the retry wait entirely —
+          # it already knows the asset is there.
+          CHANNEL = os.environ.get("CHANNEL", "").strip().lower() or "auto"
+          if CHANNEL not in ("auto", "enhanced", "official"):
+              sys.exit(f"Unknown channel {CHANNEL!r}; expected auto, enhanced, or official.")
 
           # Each release only ever carries ONE of these two variants (Full
           # releases and Enhanced releases are published separately), so a
@@ -118,7 +138,7 @@ jobs:
 
 
           def get_release():
-              if EVENT_NAME == "release" and RELEASE_TAG:
+              if RELEASE_TAG:
                   url = (
                       f"https://api.github.com/repos/{REPO}"
                       f"/releases/tags/{RELEASE_TAG}"
@@ -528,13 +548,28 @@ jobs:
 
           release_url, release = get_release()
 
+          sources_to_check = (
+              SOURCES
+              if CHANNEL == "auto"
+              else [s for s in SOURCES if s[2].lower() == CHANNEL]
+          )
+
           any_matched = False
           any_changed = False
 
-          for path, pattern, label in SOURCES:
-              release, asset = wait_for_asset(
-                  release_url, release, pattern, label
-              )
+          for path, pattern, label in sources_to_check:
+              if CHANNEL == "auto":
+                  # Real release events fire the instant the release is
+                  # published, when the asset upload may not be visible via
+                  # the API yet — worth a short retry.
+                  release, asset = wait_for_asset(
+                      release_url, release, pattern, label
+                  )
+              else:
+                  # A dispatch that already names its channel is always run
+                  # well after the release (and its asset) are fully live —
+                  # no race to wait out.
+                  asset = find_asset(release, pattern)
 
               if asset is None:
                   print(f"- {label}: no matching asset in this release, skipping.")
@@ -547,7 +582,8 @@ jobs:
 
           if not any_matched:
               sys.exit(
-                  "No asset in this release matched a known Full/Enhanced "
+                  f"No asset in this release matched the "
+                  f"{'Full/Enhanced' if CHANNEL == 'auto' else CHANNEL} "
                   "IPA naming pattern."
               )
 
