@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.13-b4",
+          "buildVersion": "129",
+          "date": "2026-09-01T15:10:59Z",
+          "localizedDescription": "# Nuvio Enhanced 0.4.13-b4\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n## Changelog\n\n### Enhanced\n- fix(details): fall back to TMDB when Trakt has no related titles @albertovinaroz\n- fix(details): retry incomplete IMDb episode-rating caches @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.13-b4/nuvio-0.4.13-b4-enhanced-release.ipa",
+          "size": 66708796,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.13-b3",
           "buildVersion": "128",
           "date": "2026-09-01T13:37:43Z",
