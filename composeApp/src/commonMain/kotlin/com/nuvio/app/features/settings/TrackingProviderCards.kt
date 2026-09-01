@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -112,6 +113,11 @@ import nuvio.composeapp.generated.resources.settings_trakt_missing_credentials
 import nuvio.composeapp.generated.resources.settings_trakt_open_login
 import nuvio.composeapp.generated.resources.settings_trakt_save_actions_description
 import nuvio.composeapp.generated.resources.settings_trakt_sign_in_description
+import nuvio.composeapp.generated.resources.settings_wetrakr_coming_soon
+import nuvio.composeapp.generated.resources.settings_wetrakr_description
+import nuvio.composeapp.generated.resources.settings_wetrakr_visit
+import nuvio.composeapp.generated.resources.wetrakr_logo_glyph
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 internal enum class TrackingBrand(val displayName: String) {
@@ -189,37 +195,37 @@ internal fun TrackingProviderCards(
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val useTwoColumns = maxWidth >= 600.dp
-        if (useTwoColumns) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                TraktProviderCard(
-                    uiState = traktUiState,
-                    onConnectWithCodeRequested = onTraktConnectWithCode,
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp),
+        ) {
+            if (useTwoColumns) {
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                )
-                SimklProviderCard(
-                    uiState = simklUiState,
-                    isSyncing = syncState.isLoading,
-                    syncErrorMessage = syncState.errorMessage,
-                    onSyncRequested = onSimklSyncRequested,
-                    onInfoRequested = { showSyncInfo = true },
-                    onConnectWithCodeRequested = onSimklConnectWithCode,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                )
-            }
-        } else {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 12.dp),
-            ) {
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    TraktProviderCard(
+                        uiState = traktUiState,
+                        onConnectWithCodeRequested = onTraktConnectWithCode,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                    )
+                    SimklProviderCard(
+                        uiState = simklUiState,
+                        isSyncing = syncState.isLoading,
+                        syncErrorMessage = syncState.errorMessage,
+                        onSyncRequested = onSimklSyncRequested,
+                        onInfoRequested = { showSyncInfo = true },
+                        onConnectWithCodeRequested = onSimklConnectWithCode,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                    )
+                }
+            } else {
                 TraktProviderCard(
                     uiState = traktUiState,
                     onConnectWithCodeRequested = onTraktConnectWithCode,
@@ -235,6 +241,7 @@ internal fun TrackingProviderCards(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            WeTrakrProviderCard(modifier = Modifier.fillMaxWidth())
         }
     }
 
@@ -850,6 +857,105 @@ private fun simklErrorMessage(error: SimklAuthError?): String? = when (error) {
     SimklAuthError.AUTHORIZATION_REVOKED ->
         stringResource(Res.string.settings_simkl_authorization_revoked)
 }
+
+// WeTrakr has no public API yet (their own help center: "it's one of our current priorities...
+// we are already working on it and on its documentation" — Nuvio is named as a private-partner
+// candidate for the first rollout phase). There's nothing to connect to, so this card is a static
+// preview rather than a full TrackingProviderCard instance: no connect/disconnect wiring, no
+// TrackingBrand enum entry, none of the auth-repository plumbing the real providers need.
+@Composable
+private fun WeTrakrProviderCard(modifier: Modifier = Modifier) {
+    val tokens = MaterialTheme.nuvio
+    val uriHandler = LocalUriHandler.current
+
+    Box(
+        modifier = modifier
+            .clip(tokens.shapes.card)
+            .background(WeTrakrCardBrush, tokens.shapes.card)
+            .border(
+                width = tokens.borders.hairline,
+                color = Color.White.copy(alpha = 0.2f),
+                shape = tokens.shapes.card,
+            ),
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.wetrakr_logo_glyph),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp)
+                .size(150.dp)
+                .alpha(0.12f),
+            contentScale = ContentScale.Fit,
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.wetrakr_logo_glyph),
+                    contentDescription = "WeTrakr",
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Fit,
+                )
+                Text(
+                    text = "WeTrakr",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            Text(
+                text = stringResource(Res.string.settings_wetrakr_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.82f),
+            )
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White.copy(alpha = 0.16f),
+                shape = RoundedCornerShape(NuvioTokens.Radius.md),
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_wetrakr_coming_soon),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 13.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            TextButton(
+                onClick = { runCatching { uriHandler.openUri(WETRAKR_WEBSITE_URL) } },
+                contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_wetrakr_visit),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
+    }
+}
+
+private val WeTrakrCardBrush = Brush.linearGradient(
+    colors = listOf(Color(0xFF4338CA), Color(0xFF6D28D9)),
+)
+private const val WETRAKR_WEBSITE_URL = "https://www.wetrakr.com"
 
 private val TrackingErrorColor = Color(0xFFFFDAD6)
 private const val SIMKL_WEBSITE_URL = "https://simkl.com"
