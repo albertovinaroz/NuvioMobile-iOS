@@ -488,28 +488,18 @@ object MetaDetailsRepository {
             )
         }
 
-        if (shouldUseTrakt) {
-            // Reached only after an empty/failed Trakt attempt above. The upstream TMDB
-            // enrichment step skips fetching recommendations whenever Trakt is the active source,
-            // so meta.moreLikeThis is empty here too — fetch it directly instead.
-            val tmdbPage = runCatching {
-                TmdbMetadataService.fetchMoreLikeThisPage(
-                    itemId = meta.id,
-                    itemType = meta.type,
-                    page = 1,
-                    settings = tmdbSettings,
-                )
-            }.onFailure { error ->
-                log.w { "Failed to load TMDB recommendations for ${meta.id}: ${error.message}" }
-            }.getOrDefault(MoreLikeThisPage())
-
-            return meta.copy(
-                moreLikeThis = tmdbPage.items,
-                moreLikeThisSource = MoreLikeThisSource.TMDB.takeIf { tmdbPage.items.isNotEmpty() },
-                moreLikeThisHasMore = tmdbPage.hasMore,
-            )
-        }
-
+        // meta.moreLikeThis is already populated with TMDB's recommendations at this point —
+        // TmdbMetadataService.enrichMeta fills it in unconditionally (whenever useMoreLikeThis is
+        // on) as part of the base meta fetch in tryFetchMeta, well before this function ever runs,
+        // with no awareness of the Trakt preference at all. An earlier version of this fix
+        // wrongly assumed that step was skipped whenever Trakt was preferred and re-fetched TMDB
+        // recommendations from scratch here — which not only duplicated a request that already
+        // happened, but re-resolved the item's TMDB ID through a different path that could fail
+        // even when the original enrichment had succeeded, silently leaving the section empty.
+        InAppLogger.info(
+            "Metadata/TMDB",
+            "More Like This fallback id=${meta.id} count=${meta.moreLikeThis.size}",
+        )
         return meta.copy(
             moreLikeThisSource = MoreLikeThisSource.TMDB.takeIf { meta.moreLikeThis.isNotEmpty() },
             moreLikeThisHasMore = meta.moreLikeThis.size >= TMDB_RECOMMENDATIONS_PAGE_SIZE,
