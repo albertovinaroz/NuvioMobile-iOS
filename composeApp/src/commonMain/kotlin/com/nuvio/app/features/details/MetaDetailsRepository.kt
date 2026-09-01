@@ -447,6 +447,7 @@ object MetaDetailsRepository {
 
         val trackingSettings = TrackingSettingsRepository.uiState.value
         val isTraktAuthenticated = TraktAuthRepository.uiState.value.mode == TraktConnectionMode.CONNECTED
+        val tmdbSettings = TmdbSettingsRepository.snapshot()
         val shouldUseTrakt = shouldUseTraktMoreLikeThis(
             isAuthenticated = isTraktAuthenticated,
             source = trackingSettings.moreLikeThisSource,
@@ -466,19 +467,46 @@ object MetaDetailsRepository {
             }.getOrDefault(MoreLikeThisPage())
             InAppLogger.info("Metadata/Trakt", "Related titles id=${meta.id} count=${page.items.size} hasMore=${page.hasMore}")
 
-            return meta.copy(
-                moreLikeThis = page.items,
-                moreLikeThisSource = MoreLikeThisSource.TRAKT.takeIf { page.items.isNotEmpty() },
-                moreLikeThisHasMore = page.hasMore,
-            )
+            if (page.items.isNotEmpty()) {
+                return meta.copy(
+                    moreLikeThis = page.items,
+                    moreLikeThisSource = MoreLikeThisSource.TRAKT,
+                    moreLikeThisHasMore = page.hasMore,
+                )
+            }
+            // Trakt has no related titles for a lot of content (it's not in its related-titles
+            // graph at all, or the lookup 404s) — that's routine, not an error. Fall back to TMDB
+            // below instead of leaving the section empty just because Trakt is the preferred
+            // source.
         }
 
-        val tmdbSettings = TmdbSettingsRepository.snapshot()
         if (!tmdbSettings.enabled || !tmdbSettings.useMoreLikeThis) {
             return meta.copy(
                 moreLikeThis = emptyList(),
                 moreLikeThisSource = null,
                 moreLikeThisHasMore = false,
+            )
+        }
+
+        if (shouldUseTrakt) {
+            // Reached only after an empty/failed Trakt attempt above. The upstream TMDB
+            // enrichment step skips fetching recommendations whenever Trakt is the active source,
+            // so meta.moreLikeThis is empty here too — fetch it directly instead.
+            val tmdbPage = runCatching {
+                TmdbMetadataService.fetchMoreLikeThisPage(
+                    itemId = meta.id,
+                    itemType = meta.type,
+                    page = 1,
+                    settings = tmdbSettings,
+                )
+            }.onFailure { error ->
+                log.w { "Failed to load TMDB recommendations for ${meta.id}: ${error.message}" }
+            }.getOrDefault(MoreLikeThisPage())
+
+            return meta.copy(
+                moreLikeThis = tmdbPage.items,
+                moreLikeThisSource = MoreLikeThisSource.TMDB.takeIf { tmdbPage.items.isNotEmpty() },
+                moreLikeThisHasMore = tmdbPage.hasMore,
             )
         }
 
