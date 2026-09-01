@@ -99,6 +99,8 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Profile Insights** — activity, library and taste breakdowns for the active profile, in Overview and Taste sections. | Settings → **Profile** | Always available |
 | **Custom profile background** — point a profile at any `http(s)` image URL. | Edit Profile → **Choose Profile Background** → Custom → **Custom background URL** | None |
 | **Animated profile switch** — tapping a profile glides its avatar to the center of the screen into the loading transition, instead of a hard cut. | Profile selection screen | Always on |
+| **Branded launch intro** — a quick wordmark reveal plays while the app resolves your session on cold start, replacing the old loading spinner. | App launch | Always on |
+| **Smooth theme color transitions** — the Nuvio wordmark crossfades between Supporter+ color themes instead of cutting abruptly when a profile uses a different one. | — | Always on |
 
 ### Details & discovery
 
@@ -120,12 +122,15 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | Feature | Where | Default |
 |---|---|---|
 | **Wi-Fi-only downloads** — downloads wait for Wi-Fi unless you allow mobile data. The switch sits at the top of the Downloads screen, not in Settings. | Downloads screen → **Allow mobile data** | Off (Wi-Fi only) |
+| **Custom download location** — pick any folder to save downloads to (a folder you grant via Storage Access Framework on Android, or via the Files app on iOS) instead of the app's private storage. | Downloads screen → **gear icon** → **Download Location** | Internal storage |
 
 ### Tracking
 
 | Feature | Where | Default |
 |---|---|---|
 | **Sign in with a code** — device-code sign-in for **Trakt** and **SIMKL**, for when the browser redirect won't come back, especially when installed within LiveContainer. Shows a code to enter on any other device. | Settings → Tracking → provider card → **Connect with code** | — |
+
+> **WeTrakr** now has a preview card in Settings → Tracking. WeTrakr doesn't have a public API yet, so there's nothing to connect to — actual scrobbling support ships once they open it up.
 
 ### iOS look and feel
 
