@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 #if canImport(ActivityKit) && os(iOS) && !targetEnvironment(macCatalyst)
 import ActivityKit
 #endif
@@ -32,8 +33,26 @@ final class DownloadsLiveActivityManager {
         guard #available(iOS 16.1, *) else { return }
 
         let payload = loadPayload()
+
+        // The app is often only briefly woken up to deliver a background
+        // NSURLSession delegate callback; that wake window isn't guaranteed to
+        // cover async work scheduled from it (like this Task and the
+        // ActivityKit update inside `apply`). Without an explicit background
+        // task assertion, the process can get suspended mid-update, leaving
+        // the Live Activity stuck on a stale percentage even though the
+        // download itself and the in-app state keep advancing correctly.
+        var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
+        backgroundTaskId = UIApplication.shared.beginBackgroundTask(withName: "DownloadsLiveActivitySync") {
+            UIApplication.shared.endBackgroundTask(backgroundTaskId)
+            backgroundTaskId = .invalid
+        }
+
         Task {
             await apply(payload)
+            if backgroundTaskId != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTaskId)
+                backgroundTaskId = .invalid
+            }
         }
 #endif
     }
