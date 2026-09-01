@@ -1,6 +1,7 @@
 package com.nuvio.app.features.details
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.core.time.EpisodeReleaseDatePlatform
 import com.nuvio.app.features.addons.httpGetText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -27,13 +28,20 @@ internal object OmdbEpisodeRatingsService {
     /** Oldest entries are evicted first once this many season-rating sets are cached. */
     private const val MaxCachedSeasons = 400
 
+    // A season is "incomplete" when OMDb has fewer rated episodes than episodes it lists at
+    // all — almost always because some just aired and haven't accumulated enough IMDb votes
+    // yet, not because they'll never be rated. Retry those after a cooldown instead of caching
+    // the gap forever, or an episode that airs a week before someone checks a show stays stuck
+    // showing TMDB's rating indefinitely even once IMDb catches up.
+    private const val IncompleteSeasonRetryAfterMs = 2 * 24 * 60 * 60 * 1000L // 2 days
+
     private val log = Logger.withTag("OmdbEpisodeRatings")
     private val json = Json { ignoreUnknownKeys = true }
     private val imdbIdRegex = Regex("tt\\d+")
 
     // LinkedHashMap preserves insertion order across all KMP targets, so evicting the
     // first entries once over the cap behaves as a simple oldest-in/first-out cache.
-    private val seasonCache = LinkedHashMap<String, Map<Int, Double>>()
+    private val seasonCache = LinkedHashMap<String, CachedSeasonRatings>()
     private var hasLoadedFromDisk = false
 
     val hasApiKey: Boolean
@@ -73,13 +81,13 @@ internal object OmdbEpisodeRatingsService {
         hasLoadedFromDisk = true
         val payload = OmdbEpisodeRatingsStorage.loadPayload()?.trim().orEmpty()
         if (payload.isEmpty()) return
-        runCatching { json.decodeFromString<Map<String, Map<Int, Double>>>(payload) }
+        runCatching { json.decodeFromString<Map<String, CachedSeasonRatings>>(payload) }
             .onSuccess { seasonCache.putAll(it) }
             .onFailure { error -> log.w { "Failed to load cached IMDb ratings: ${error.message}" } }
     }
 
     private fun persistToDisk() {
-        val payload = runCatching { json.encodeToString<Map<String, Map<Int, Double>>>(seasonCache) }
+        val payload = runCatching { json.encodeToString<Map<String, CachedSeasonRatings>>(seasonCache) }
             .getOrNull() ?: return
         OmdbEpisodeRatingsStorage.savePayload(payload)
     }
@@ -90,18 +98,24 @@ internal object OmdbEpisodeRatingsService {
         apiKey: String,
     ): Map<Int, Double> {
         val cacheKey = "$imdbId:$season"
-        seasonCache[cacheKey]?.let { return it }
+        val cached = seasonCache[cacheKey]
+        if (cached != null) {
+            val dueForRetry = !cached.isComplete &&
+                EpisodeReleaseDatePlatform.nowEpochMs() - cached.fetchedAtEpochMs >= IncompleteSeasonRetryAfterMs
+            if (!dueForRetry) return cached.ratings
+        }
 
         val url = "https://www.omdbapi.com/?i=$imdbId&Season=$season&apikey=$apiKey"
         val response = runCatching {
             json.decodeFromString<OmdbSeasonResponse>(httpGetText(url))
         }.onFailure { error ->
             log.w { "OMDb season request failed for $imdbId season $season: ${error.message}" }
-        }.getOrNull() ?: return emptyMap()
+        }.getOrNull() ?: return cached?.ratings.orEmpty()
 
-        if (!response.response.equals("True", ignoreCase = true)) return emptyMap()
+        if (!response.response.equals("True", ignoreCase = true)) return cached?.ratings.orEmpty()
 
-        val ratings = response.episodes.orEmpty()
+        val episodes = response.episodes.orEmpty()
+        val ratings = episodes
             .mapNotNull { episode ->
                 val episodeNumber = episode.episode?.toIntOrNull() ?: return@mapNotNull null
                 val rating = episode.imdbRating
@@ -113,8 +127,12 @@ internal object OmdbEpisodeRatingsService {
             }
             .toMap()
 
-        if (ratings.isNotEmpty()) {
-            seasonCache[cacheKey] = ratings
+        if (episodes.isNotEmpty()) {
+            seasonCache[cacheKey] = CachedSeasonRatings(
+                ratings = ratings,
+                episodeCount = episodes.size,
+                fetchedAtEpochMs = EpisodeReleaseDatePlatform.nowEpochMs(),
+            )
             while (seasonCache.size > MaxCachedSeasons) {
                 val oldestKey = seasonCache.keys.firstOrNull() ?: break
                 seasonCache.remove(oldestKey)
@@ -123,6 +141,21 @@ internal object OmdbEpisodeRatingsService {
         }
         return ratings
     }
+}
+
+/**
+ * [episodeCount] is how many episodes OMDb's season response listed at fetch time (rated or
+ * not) — comparing it to `ratings.size` is what lets a season with newly-aired, not-yet-rated
+ * episodes be recognized as [isComplete] == false and retried later, instead of caching the gap
+ * forever.
+ */
+@Serializable
+private data class CachedSeasonRatings(
+    val ratings: Map<Int, Double>,
+    val episodeCount: Int,
+    val fetchedAtEpochMs: Long,
+) {
+    val isComplete: Boolean get() = ratings.size >= episodeCount
 }
 
 @Serializable
