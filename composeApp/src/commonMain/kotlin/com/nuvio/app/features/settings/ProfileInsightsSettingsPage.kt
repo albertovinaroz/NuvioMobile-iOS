@@ -509,6 +509,8 @@ private fun ProfileHeroMetric(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
+            fontSize = 8.sp,
+            letterSpacing = 0.sp,
             color = Color.White.copy(alpha = 0.70f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -600,7 +602,7 @@ private fun ProfileInsightStatCard(
     val tokens = MaterialTheme.nuvio
     Surface(
         modifier = modifier
-            .heightIn(min = 116.dp)
+            .height(136.dp)
             .then(
                 if (onClick != null) {
                     Modifier.clickable(onClick = onClick)
@@ -656,6 +658,8 @@ private fun ProfileInsightStatCard(
             Text(
                 text = tile.caption,
                 style = MaterialTheme.typography.labelSmall,
+                fontSize = 9.sp,
+                letterSpacing = 0.sp,
                 color = tokens.colors.textMuted,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
