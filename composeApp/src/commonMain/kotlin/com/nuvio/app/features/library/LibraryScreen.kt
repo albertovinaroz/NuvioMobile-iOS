@@ -17,14 +17,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -75,6 +81,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.i18n.localizedMonthName
@@ -116,6 +124,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
@@ -130,7 +141,6 @@ fun LibraryScreen(
     onSectionViewAllClick: ((LibrarySection, LibrarySortOption) -> Unit)? = null,
     onCloudFilePlay: ((CloudLibraryItem, CloudLibraryFile) -> Unit)? = null,
     onConnectCloudClick: (() -> Unit)? = null,
-    onOpenCalendar: (() -> Unit)? = null,
     disintegrationRequest: DisintegrationRequest<String>? = null,
 ) {
     val uiState by remember {
@@ -159,6 +169,21 @@ fun LibraryScreen(
     val sourceMode = remember(sourceModeName) {
         runCatching { LibraryViewMode.valueOf(sourceModeName) }.getOrDefault(LibraryViewMode.Saved)
     }
+    var showReleaseCalendar by rememberSaveable { mutableStateOf(false) }
+    val releaseCalendarCacheState by LibraryReleaseCalendarCache.state.collectAsStateWithLifecycle()
+    val releaseCalendarCacheKey = remember(uiState.items) {
+        LibraryReleaseCalendarCache.cacheKeyFor(uiState.items)
+    }
+    val fallbackCalendarEvents = remember(uiState.items) {
+        buildLibraryReleaseCalendarFallbackEvents(uiState.items)
+    }
+    val releaseCalendarEvents = if (releaseCalendarCacheState.cacheKey == releaseCalendarCacheKey) {
+        releaseCalendarCacheState.events
+    } else {
+        fallbackCalendarEvents
+    }
+    val releaseCalendarLoading =
+        releaseCalendarCacheState.cacheKey == releaseCalendarCacheKey && releaseCalendarCacheState.isWarming
     var selectedProviderId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedTypeName by rememberSaveable { mutableStateOf<String?>(null) }
     var cloudSearchQuery by rememberSaveable { mutableStateOf("") }
@@ -287,6 +312,12 @@ fun LibraryScreen(
         }
     }
 
+    LaunchedEffect(uiState.items) {
+        if (uiState.items.isNotEmpty()) {
+            LibraryReleaseCalendarCache.warm(uiState.items)
+        }
+    }
+
     val disintegration = remember { LibraryDisintegrationHolder() }
     val librarySectionsDisplay = if (
         sourceMode != LibraryViewMode.Cloud &&
@@ -369,10 +400,10 @@ fun LibraryScreen(
                                         }
                                     }
                                 }
-                                if (sourceMode != LibraryViewMode.Cloud && onOpenCalendar != null) {
+                                if (sourceMode != LibraryViewMode.Cloud) {
                                     val openCalendarLabel = stringResource(Res.string.library_calendar_open)
                                     IconButton(
-                                        onClick = onOpenCalendar,
+                                        onClick = { showReleaseCalendar = true },
                                         modifier = Modifier
                                             .size(40.dp)
                                             .semantics { contentDescription = openCalendarLabel },
@@ -534,6 +565,14 @@ fun LibraryScreen(
         }
     }
 
+    if (showReleaseCalendar) {
+        LibraryReleaseCalendarPanel(
+            events = releaseCalendarEvents,
+            isLoading = releaseCalendarLoading,
+            onDismiss = { showReleaseCalendar = false },
+            onPosterClick = onPosterClick,
+        )
+    }
 }
 
 private fun LazyListScope.cloudLibraryContent(
@@ -1281,47 +1320,11 @@ private fun CloudSkeletonBlock(
 }
 
 @Composable
-internal fun LibraryReleaseCalendarScreen(
-    onBack: () -> Unit,
-    onPosterClick: ((LibraryItem) -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    val uiState by remember {
-        LibraryRepository.ensureLoaded()
-        LibraryRepository.uiState
-    }.collectAsStateWithLifecycle()
-    var events by remember(uiState.items) {
-        mutableStateOf(buildLibraryReleaseCalendarFallbackEvents(uiState.items))
-    }
-    var isLoading by remember(uiState.items) { mutableStateOf(false) }
-
-    LaunchedEffect(uiState.items) {
-        val itemsSnapshot = uiState.items
-        events = buildLibraryReleaseCalendarFallbackEvents(itemsSnapshot)
-        isLoading = true
-        try {
-            events = buildLibraryReleaseCalendarEvents(itemsSnapshot)
-        } finally {
-            isLoading = false
-        }
-    }
-
-    LibraryReleaseCalendarContent(
-        events = events,
-        isLoading = isLoading,
-        onBack = onBack,
-        onPosterClick = onPosterClick,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun LibraryReleaseCalendarContent(
+private fun LibraryReleaseCalendarPanel(
     events: List<LibraryCalendarEvent>,
     isLoading: Boolean,
-    onBack: () -> Unit,
+    onDismiss: () -> Unit,
     onPosterClick: ((LibraryItem) -> Unit)?,
-    modifier: Modifier = Modifier,
 ) {
     val today = remember { parseLibraryCalendarDate(CurrentDateProvider.todayIsoDate()) ?: LibraryCalendarDate(1970, 1, 1) }
     val todayIso = today.iso
@@ -1340,117 +1343,212 @@ private fun LibraryReleaseCalendarContent(
 
     val selectedEvents = eventsByDate[selectedDateIso].orEmpty()
     val selectedDate = parseLibraryCalendarDate(selectedDateIso)
-
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+        ),
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                top = 12.dp,
-                end = 20.dp,
-                bottom = 44.dp,
-            ),
-        ) {
-            item {
-                LibraryCalendarTopBar(
-                    title = stringResource(Res.string.library_calendar_title),
-                    subtitle = stringResource(Res.string.library_calendar_exact_dates_only),
-                    onBack = onBack,
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                 )
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp),
+        ) {
+            val useHorizontalLayout = maxWidth >= 600.dp || maxWidth > maxHeight
+            val panelHeight = if (useHorizontalLayout) {
+                minOf(maxHeight, 500.dp)
+            } else {
+                minOf(maxHeight, 700.dp)
             }
 
-            if (events.isEmpty() && isLoading) {
-                item {
-                    LibraryCalendarLoadingState()
-                }
-            } else if (events.isEmpty()) {
-                item {
-                    LibraryCalendarEmptyState()
-                }
-            } else {
-                item {
-                    LibraryCalendarCard(
-                        month = visibleMonth,
-                        monthEventCount = monthEvents.size,
-                        eventsByDate = eventsByDate,
-                        selectedDateIso = selectedDateIso,
-                        todayIso = todayIso,
-                        onPrevious = {
-                            calendarSelection = defaultLibraryCalendarSelection(
-                                events = events,
-                                month = visibleMonth.previous(),
-                                todayIso = todayIso,
-                            )
-                        },
-                        onNext = {
-                            calendarSelection = defaultLibraryCalendarSelection(
-                                events = events,
-                                month = visibleMonth.next(),
-                                todayIso = todayIso,
-                            )
-                        },
-                        onToday = {
-                            calendarSelection = LibraryCalendarSelection(
-                                month = LibraryCalendarMonth(today.year, today.month),
-                                dateIso = todayIso,
-                            )
-                        },
-                        onDateSelected = { date ->
-                            calendarSelection = calendarSelection.copy(dateIso = date.iso)
-                        },
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(onClick = onDismiss),
+            )
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .widthIn(max = 760.dp)
+                    .fillMaxWidth()
+                    .height(panelHeight)
+                    .clickable(onClick = {}),
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(28.dp),
+                shadowElevation = 18.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(20.dp),
+                ) {
+                    LibraryCalendarTopBar(
+                        title = stringResource(Res.string.library_calendar_title),
+                        subtitle = stringResource(Res.string.library_calendar_exact_dates_only),
+                        onDismiss = onDismiss,
                     )
-                }
 
-                item {
-                    Spacer(modifier = Modifier.height(26.dp))
-                    LibraryCalendarAgendaHeader(
-                        selectedDate = selectedDate,
-                        eventCount = selectedEvents.size,
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                if (selectedEvents.isEmpty()) {
-                    item {
-                        LibraryCalendarNoDayEvents()
+                    when {
+                        events.isEmpty() && isLoading -> LibraryCalendarLoadingState()
+                        events.isEmpty() -> LibraryCalendarEmptyState()
+                        useHorizontalLayout -> {
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                LazyColumn(modifier = Modifier.weight(1f)) {
+                                    item {
+                                        LibraryCalendarCard(
+                                            month = visibleMonth,
+                                            monthEventCount = monthEvents.size,
+                                            eventsByDate = eventsByDate,
+                                            selectedDateIso = selectedDateIso,
+                                            todayIso = todayIso,
+                                            onPrevious = {
+                                                calendarSelection = defaultLibraryCalendarSelection(
+                                                    events = events,
+                                                    month = visibleMonth.previous(),
+                                                    todayIso = todayIso,
+                                                )
+                                            },
+                                            onNext = {
+                                                calendarSelection = defaultLibraryCalendarSelection(
+                                                    events = events,
+                                                    month = visibleMonth.next(),
+                                                    todayIso = todayIso,
+                                                )
+                                            },
+                                            onToday = {
+                                                calendarSelection = LibraryCalendarSelection(
+                                                    month = LibraryCalendarMonth(today.year, today.month),
+                                                    dateIso = todayIso,
+                                                )
+                                            },
+                                            onDateSelected = { date ->
+                                                calendarSelection = calendarSelection.copy(dateIso = date.iso)
+                                            },
+                                        )
+                                    }
+                                }
+                                LazyColumn(modifier = Modifier.weight(1f)) {
+                                    libraryCalendarAgendaContent(
+                                        selectedDate = selectedDate,
+                                        selectedEvents = selectedEvents,
+                                        todayIso = todayIso,
+                                        isLoading = isLoading,
+                                        onEventClick = onPosterClick?.let { posterClick ->
+                                            { event ->
+                                                onDismiss()
+                                                posterClick(event.item)
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                            ) {
+                                item {
+                                    LibraryCalendarCard(
+                                        month = visibleMonth,
+                                        monthEventCount = monthEvents.size,
+                                        eventsByDate = eventsByDate,
+                                        selectedDateIso = selectedDateIso,
+                                        todayIso = todayIso,
+                                        onPrevious = {
+                                            calendarSelection = defaultLibraryCalendarSelection(
+                                                events = events,
+                                                month = visibleMonth.previous(),
+                                                todayIso = todayIso,
+                                            )
+                                        },
+                                        onNext = {
+                                            calendarSelection = defaultLibraryCalendarSelection(
+                                                events = events,
+                                                month = visibleMonth.next(),
+                                                todayIso = todayIso,
+                                            )
+                                        },
+                                        onToday = {
+                                            calendarSelection = LibraryCalendarSelection(
+                                                month = LibraryCalendarMonth(today.year, today.month),
+                                                dateIso = todayIso,
+                                            )
+                                        },
+                                        onDateSelected = { date ->
+                                            calendarSelection = calendarSelection.copy(dateIso = date.iso)
+                                        },
+                                    )
+                                }
+                                libraryCalendarAgendaContent(
+                                    selectedDate = selectedDate,
+                                    selectedEvents = selectedEvents,
+                                    todayIso = todayIso,
+                                    isLoading = isLoading,
+                                    onEventClick = onPosterClick?.let { posterClick ->
+                                        { event ->
+                                            onDismiss()
+                                            posterClick(event.item)
+                                        }
+                                    },
+                                )
+                            }
+                        }
                     }
-                } else {
-                    items(
-                        items = selectedEvents,
-                        key = { event -> event.key },
-                    ) { event ->
-                        LibraryCalendarEventRow(
-                            event = event,
-                            todayIso = todayIso,
-                            onClick = onPosterClick?.let { posterClick ->
-                                { posterClick(event.item) }
-                            },
-                        )
-                    }
-                }
-
-                if (isLoading) {
-                    item {
-                        LibraryCalendarInlineLoading()
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
     }
 }
 
+private fun LazyListScope.libraryCalendarAgendaContent(
+    selectedDate: LibraryCalendarDate?,
+    selectedEvents: List<LibraryCalendarEvent>,
+    todayIso: String,
+    isLoading: Boolean,
+    onEventClick: ((LibraryCalendarEvent) -> Unit)?,
+) {
+    item {
+        Spacer(modifier = Modifier.height(4.dp))
+        LibraryCalendarAgendaHeader(
+            selectedDate = selectedDate,
+            eventCount = selectedEvents.size,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+    }
+    if (selectedEvents.isEmpty()) {
+        item { LibraryCalendarNoDayEvents() }
+    } else {
+        items(items = selectedEvents, key = { event -> event.key }) { event ->
+            LibraryCalendarEventRow(
+                event = event,
+                todayIso = todayIso,
+                onClick = onEventClick?.let { eventClick -> { eventClick(event) } },
+            )
+        }
+    }
+    if (isLoading) {
+        item { LibraryCalendarInlineLoading() }
+    }
+    item { Spacer(modifier = Modifier.height(12.dp)) }
+}
+
 @Composable
 private fun LibraryCalendarTopBar(
     title: String,
     subtitle: String,
-    onBack: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -1459,17 +1557,6 @@ private fun LibraryCalendarTopBar(
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = stringResource(Res.string.action_back),
-                modifier = Modifier.size(22.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
-        }
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -1490,6 +1577,17 @@ private fun LibraryCalendarTopBar(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.size(40.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = stringResource(Res.string.action_close),
+                modifier = Modifier.size(22.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -2134,12 +2232,86 @@ private data class LibraryCalendarMonth(
         if (month == 12) LibraryCalendarMonth(year + 1, 1) else copy(month = month + 1)
 }
 
-private suspend fun buildLibraryReleaseCalendarEvents(items: List<LibraryItem>): List<LibraryCalendarEvent> {
+private data class LibraryReleaseCalendarCacheState(
+    val cacheKey: String? = null,
+    val events: List<LibraryCalendarEvent> = emptyList(),
+    val isWarming: Boolean = false,
+    val isReady: Boolean = false,
+)
+
+/**
+ * Keeps the nearby release window ready while Library is visible, so opening the calendar does
+ * not wait for metadata requests. MetaDetailsRepository supplies the lower-level meta cache;
+ * this cache stores the calendar-ready event projection for the previous, current, and next month.
+ */
+private object LibraryReleaseCalendarCache {
+    private val _state = MutableStateFlow(LibraryReleaseCalendarCacheState())
+    val state: StateFlow<LibraryReleaseCalendarCacheState> = _state.asStateFlow()
+    private var activeCacheKey: String? = null
+
+    fun cacheKeyFor(items: List<LibraryItem>): String {
+        val nearbyMonths = libraryCalendarWarmMonthKeys().joinToString(separator = ",")
+        val itemFingerprint = items.joinToString(separator = "|") { item ->
+            "${item.type}:${item.id}:${item.releaseInfo.orEmpty()}"
+        }
+        return "${ProfileRepository.activeProfileId}:$nearbyMonths:$itemFingerprint"
+    }
+
+    suspend fun warm(items: List<LibraryItem>) {
+        val cacheKey = cacheKeyFor(items)
+        if ((_state.value.cacheKey == cacheKey && _state.value.isReady) || activeCacheKey == cacheKey) return
+
+        activeCacheKey = cacheKey
+        val fallbackEvents = buildLibraryReleaseCalendarFallbackEvents(items)
+        _state.value = LibraryReleaseCalendarCacheState(
+            cacheKey = cacheKey,
+            events = fallbackEvents,
+            isWarming = true,
+        )
+
+        try {
+            val warmedEvents = buildLibraryReleaseCalendarEvents(
+                items = items,
+                targetMonthKeys = libraryCalendarWarmMonthKeys(),
+            )
+            if (activeCacheKey == cacheKey) {
+                _state.value = LibraryReleaseCalendarCacheState(
+                    cacheKey = cacheKey,
+                    events = warmedEvents,
+                    isReady = true,
+                )
+            }
+        } finally {
+            if (activeCacheKey == cacheKey && _state.value.isWarming) {
+                _state.value = _state.value.copy(isWarming = false)
+            }
+            if (activeCacheKey == cacheKey) {
+                activeCacheKey = null
+            }
+        }
+    }
+}
+
+private fun libraryCalendarWarmMonthKeys(): Set<String> {
+    val currentMonth = initialLibraryCalendarMonth()
+    return setOf(
+        currentMonth.previous().key,
+        currentMonth.key,
+        currentMonth.next().key,
+    )
+}
+
+private suspend fun buildLibraryReleaseCalendarEvents(
+    items: List<LibraryItem>,
+    targetMonthKeys: Set<String>,
+): List<LibraryCalendarEvent> {
     val fallbackEvents = buildLibraryReleaseCalendarFallbackEvents(items)
-    val episodeEvents = buildLibraryEpisodeCalendarEvents(items)
+    val episodeEvents = buildLibraryEpisodeCalendarEvents(items, targetMonthKeys)
     val seriesWithEpisodeEvents = episodeEvents.map { it.item.id to it.item.type.lowercase() }.toSet()
     return (episodeEvents + fallbackEvents.filterNot { event ->
-        event.item.isLibrarySeries() && (event.item.id to event.item.type.lowercase()) in seriesWithEpisodeEvents
+        event.date.iso.take(7) in targetMonthKeys &&
+            event.item.isLibrarySeries() &&
+            (event.item.id to event.item.type.lowercase()) in seriesWithEpisodeEvents
     })
         .distinctBy { it.key }
         .sortedWith(compareBy<LibraryCalendarEvent> { it.date.iso }.thenBy { it.sortTitle.lowercase() })
@@ -2164,7 +2336,10 @@ private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>):
         .sortedWith(compareBy<LibraryCalendarEvent> { it.date.iso }.thenBy { it.item.name.lowercase() })
         .toList()
 
-private suspend fun buildLibraryEpisodeCalendarEvents(items: List<LibraryItem>): List<LibraryCalendarEvent> =
+private suspend fun buildLibraryEpisodeCalendarEvents(
+    items: List<LibraryItem>,
+    targetMonthKeys: Set<String>,
+): List<LibraryCalendarEvent> =
     coroutineScope {
         val events = mutableListOf<LibraryCalendarEvent>()
         items
@@ -2174,7 +2349,9 @@ private suspend fun buildLibraryEpisodeCalendarEvents(items: List<LibraryItem>):
                 events += chunk.map { item ->
                     async {
                         val details = MetaDetailsRepository.fetch(item.type, item.id) ?: return@async emptyList()
-                        details.videos.mapNotNull { video -> video.toLibraryCalendarEvent(item) }
+                        details.videos
+                            .mapNotNull { video -> video.toLibraryCalendarEvent(item) }
+                            .filter { event -> event.date.iso.take(7) in targetMonthKeys }
                     }
                 }.awaitAll().flatten()
             }
