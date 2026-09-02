@@ -338,6 +338,7 @@ object DownloadsRepository {
     internal fun reportPlatformSuccess(downloadId: String, localFileUri: String, totalBytes: Long?) {
         ensureLoaded()
         activeHandles.remove(downloadId)
+        val title = _uiState.value.items.firstOrNull { it.id == downloadId }?.title
         mutateItem(downloadId) { current ->
             current.copy(
                 status = DownloadStatus.Completed,
@@ -347,6 +348,9 @@ object DownloadsRepository {
                 errorMessage = null,
                 updatedAtEpochMs = DownloadsClock.nowEpochMs(),
             )
+        }
+        if (title != null) {
+            runCatching { DownloadsCompletionNotificationPlatform.notifyDownloadCompleted(title) }
         }
     }
 

@@ -129,6 +129,7 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Custom download location** — pick any folder to save downloads to (a folder you grant via Storage Access Framework on Android, or via the Files app on iOS) instead of the app's private storage. | Downloads screen → **gear icon** → **Download Location** | Internal storage |
 | **Background downloads (iOS)** — a download keeps transferring after you leave the app, instead of stalling the moment it's backgrounded. Doesn't survive a full force-quit. | — | Always on |
 | **Download progress notification (iOS)** — live progress shown in a Lock Screen/Dynamic Island Live Activity while a download is running. | — | Always on |
+| **Download-completed notification (iOS)** — a local notification confirming a download finished, backing up the Live Activity for updates iOS drops while backgrounded. | — | Always on |
 
 ### Tracking
 
