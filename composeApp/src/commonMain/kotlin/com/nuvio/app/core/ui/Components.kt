@@ -352,6 +352,10 @@ fun NuvioInputField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    // Defaults to the previous corner radius so form-style callers (collection titles, addon
+    // URLs, profile names) are unaffected — search fields pass tokens.shapes.chip explicitly for
+    // the fully-rounded, iOS-search-bar look.
+    shape: Shape = RoundedCornerShape(NuvioTokens.Radius.lg),
     trailingContent: (@Composable (() -> Unit))? = null,
 ) {
     val tokens = MaterialTheme.nuvio
@@ -360,7 +364,7 @@ fun NuvioInputField(
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
-        shape = RoundedCornerShape(NuvioTokens.Radius.lg),
+        shape = shape,
         placeholder = {
             Text(
                 text = placeholder,

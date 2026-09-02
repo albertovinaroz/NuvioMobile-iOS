@@ -1122,7 +1122,7 @@ private fun SettingsSearchField(
         onValueChange = onQueryChange,
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
-        shape = tokens.shapes.compactCard,
+        shape = tokens.shapes.chip,
         leadingIcon = {
             Icon(
                 imageVector = Icons.Rounded.Search,

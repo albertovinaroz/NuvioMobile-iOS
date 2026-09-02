@@ -377,6 +377,7 @@ private fun LiveTvSearchField(
             value = query,
             onValueChange = onQueryChange,
             placeholder = stringResource(Res.string.live_tv_search_placeholder),
+            shape = RoundedCornerShape(NuvioTokens.Radius.full),
             trailingContent = {
                 if (query.isBlank()) {
                     Icon(

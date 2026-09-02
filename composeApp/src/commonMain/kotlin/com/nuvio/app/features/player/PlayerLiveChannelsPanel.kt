@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.nuvio.app.core.ui.NuvioTokens
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -307,6 +308,7 @@ private fun PlayerLiveChannelSearchField(
             value = query,
             onValueChange = onQueryChange,
             placeholder = stringResource(Res.string.live_tv_search_placeholder),
+            shape = RoundedCornerShape(NuvioTokens.Radius.full),
             trailingContent = {
                 if (query.isBlank()) {
                     Icon(

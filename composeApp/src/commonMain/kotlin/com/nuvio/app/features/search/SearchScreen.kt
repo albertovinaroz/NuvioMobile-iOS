@@ -45,6 +45,7 @@ import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
 import com.nuvio.app.core.ui.NuvioScreenHeader
+import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.addons.AddonRepository
@@ -255,6 +256,7 @@ fun SearchScreen(
                             onValueChange = { query = it },
                             placeholder = stringResource(Res.string.compose_search_placeholder),
                             modifier = Modifier.focusRequester(focusRequester),
+                            shape = RoundedCornerShape(NuvioTokens.Radius.full),
                             trailingContent = if (query.isNotBlank()) {
                                 {
                                     IconButton(onClick = { query = "" }) {

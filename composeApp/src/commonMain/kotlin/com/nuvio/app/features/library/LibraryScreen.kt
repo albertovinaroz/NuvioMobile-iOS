@@ -742,7 +742,7 @@ private fun CloudLibrarySearchField(
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.nuvio.shapes.chip,
         placeholder = { Text(stringResource(Res.string.cloud_library_search_label)) },
         leadingIcon = {
             Icon(

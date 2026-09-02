@@ -148,6 +148,7 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Skia graphics engine** — rebuilt graphics engine for animated artwork rendering with shared codecs and bounded memory. Fixes a crash on large animated collections; supports animated avatars and badges. | — | — |
 | **Bundled CJK font** — fixes Chinese subtitle rendering. | — | — |
 | **Native-style Settings rows** — plain icon and chevron, no colored chips or section labels, matching the stock iOS/WhatsApp settings list look. | Settings | Always on |
+| **Pill-shaped search bars** — every search field (Settings, Search, Live TV, Player live channels, Cloud Library) uses a fully rounded pill, matching iOS conventions. | — | Always on |
 
 ---
 
