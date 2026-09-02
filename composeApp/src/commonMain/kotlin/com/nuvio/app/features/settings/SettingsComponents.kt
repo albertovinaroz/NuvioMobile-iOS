@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.Icon
@@ -76,7 +77,11 @@ private fun SettingsCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = tokens.colors.surface,
-        shape = if (isTablet) RoundedCornerShape(NuvioTokens.Radius.xl) else tokens.shapes.compactCard,
+        // Noticeably rounder than the shared compactCard token (12dp), matching the pronounced
+        // corner radius native iOS uses for grouped Settings sections — reuses the same xxl
+        // radius the app's own sheets/dialogs already use, scoped to just this card rather than
+        // bumping compactCard itself, which many other surfaces share.
+        shape = RoundedCornerShape(NuvioTokens.Radius.xxl),
         border = BorderStroke(
             tokens.borders.hairline,
             tokens.colors.borderSubtle,
@@ -203,26 +208,31 @@ internal fun SettingsSidebarItem(
 
 @Composable
 internal fun SettingsSection(
-    title: String,
+    // Null hides the label row entirely — used on the Settings root page, which groups its
+    // cards purely by spacing (no "ACCOUNT" / "GENERAL" headers), matching native iOS Settings.
+    // Sub-pages that pass a real title (e.g. "CREDENTIALS", "LOCALIZATION") are unaffected.
+    title: String?,
     isTablet: Boolean,
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
     Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NuvioSectionLabel(text = title)
+        if (title != null) {
             Row(
-                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                content = actions,
-            )
+            ) {
+                NuvioSectionLabel(text = title)
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = actions,
+                )
+            }
+            Spacer(modifier = Modifier.height(if (isTablet) tokens.spacing.listGap else NuvioTokens.Space.s10))
         }
-        Spacer(modifier = Modifier.height(if (isTablet) tokens.spacing.listGap else NuvioTokens.Space.s10))
         content()
     }
 }
@@ -262,13 +272,20 @@ internal fun SettingsNavigationRow(
     description: String?,
     icon: ImageVector? = null,
     iconPainter: Painter? = null,
+    // Plain glyph, no background chip — the native iOS Settings / WhatsApp Settings look, where
+    // every row's icon just sits directly in front of the label instead of inside a colored
+    // square. Tint still follows the user's chosen theme accent by default (a soft halo behind
+    // the glyph carries the same accent through), so switching Home → Layout color continues to
+    // reach Settings the way it did before this row style changed.
+    iconTint: Color? = null,
     enabled: Boolean = true,
     isTablet: Boolean,
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
-    val iconSize = if (isTablet) 42.dp else 36.dp
+    val resolvedIconTint = iconTint ?: tokens.colors.accent
+    val iconSize = if (isTablet) 26.dp else 22.dp
     val verticalPadding = if (isTablet) 16.dp else 14.dp
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
 
@@ -289,33 +306,27 @@ internal fun SettingsNavigationRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null || iconPainter != null) {
-                Surface(
+                Box(
                     modifier = Modifier.size(iconSize),
-                    color = tokens.colors.accent.copy(alpha = tokens.opacity.pressed),
-                    shape = tokens.shapes.compactCard,
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (iconPainter != null) {
-                            androidx.compose.foundation.Image(
-                                painter = iconPainter,
-                                contentDescription = null,
-                                modifier = Modifier.size(if (isTablet) 28.dp else 24.dp),
-                                contentScale = ContentScale.Fit,
-                            )
-                        } else if (icon != null) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = tokens.colors.accent,
-                            )
-                        }
+                    if (iconPainter != null) {
+                        androidx.compose.foundation.Image(
+                            painter = iconPainter,
+                            contentDescription = null,
+                            modifier = Modifier.size(iconSize),
+                            contentScale = ContentScale.Fit,
+                        )
+                    } else if (icon != null) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(iconSize),
+                            tint = resolvedIconTint,
+                        )
                     }
                 }
-                Spacer(modifier = Modifier.width(if (isTablet) 16.dp else 14.dp))
+                Spacer(modifier = Modifier.width(if (isTablet) 18.dp else 16.dp))
             }
             Column {
                 Text(
@@ -335,7 +346,16 @@ internal fun SettingsNavigationRow(
                 }
             }
         }
-        trailingContent?.invoke(this)
+        if (trailingContent != null) {
+            trailingContent(this)
+        } else {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = tokens.colors.textMuted,
+                modifier = Modifier.size(if (isTablet) 22.dp else 20.dp),
+            )
+        }
     }
 }
 

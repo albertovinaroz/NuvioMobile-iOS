@@ -95,7 +95,7 @@ internal fun LazyListScope.settingsRootContent(
     if (showAccountSection) {
         item {
             SettingsSection(
-                title = stringResource(Res.string.compose_settings_root_account_section),
+                title = null,
                 isTablet = isTablet,
             ) {
                 SettingsGroup(isTablet = isTablet) {
@@ -131,7 +131,7 @@ internal fun LazyListScope.settingsRootContent(
     if (showGeneralSection) {
         item {
             SettingsSection(
-                title = stringResource(Res.string.compose_settings_root_general_section),
+                title = null,
                 isTablet = isTablet,
             ) {
                 SettingsGroup(isTablet = isTablet) {
@@ -190,7 +190,7 @@ internal fun LazyListScope.settingsRootContent(
         item {
             val uriHandler = LocalUriHandler.current
             SettingsSection(
-                title = stringResource(Res.string.compose_settings_root_about_section),
+                title = null,
                 isTablet = isTablet,
             ) {
                 SettingsGroup(isTablet = isTablet) {
@@ -246,7 +246,7 @@ internal fun LazyListScope.settingsRootContent(
     if (showAdvancedSection) {
         item {
             SettingsSection(
-                title = stringResource(Res.string.compose_settings_root_advanced_section),
+                title = null,
                 isTablet = isTablet,
             ) {
                 SettingsGroup(isTablet = isTablet) {
