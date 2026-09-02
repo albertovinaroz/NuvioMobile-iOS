@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.13-b5",
+          "buildVersion": "130",
+          "date": "2026-09-02T15:25:53Z",
+          "localizedDescription": "# Nuvio Enhanced 0.4.13-b5\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json\n```\n\n## Changelog\n\n### Enhanced\n- feat(playback): add random episode action and next-episode preferences @luqmanfadlli\n- fix(details): reorder random-episode action and fix Play label overflow @albertovinaroz\n- feat(library): show release calendar in a responsive overlay panel @luqmanfadlli\n- fix(ui): equalize profile stat cards and prevent text truncation @Arad00ak\n- fix(ui): fit profile and library cards @Arad00ak\n- fix(details): use the already-fetched TMDB recommendations for the Trakt fallback @albertovinaroz\n- fix(profiles): make profile-selection haptics work on iOS @albertovinaroz\n- feat(details): celebrate finishing a season @albertovinaroz\n- feat(downloads): notify locally when a download finishes on iOS @albertovinaroz\n- feat(tmdb): auto-enable enrichment when an API key is saved @albertovinaroz\n- feat(settings): redesign rows to match native iOS list style @albertovinaroz\n- feat(ui): round all search bars to a full pill shape @albertovinaroz\n- feat(home): add a liquid-glass mute button to the hero @albertovinaroz\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioMobile-iOS/releases/download/0.4.13-b5/nuvio-0.4.13-b5-enhanced-release.ipa",
+          "size": 66738027,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.13-b4",
           "buildVersion": "129",
           "date": "2026-09-01T15:10:59Z",
