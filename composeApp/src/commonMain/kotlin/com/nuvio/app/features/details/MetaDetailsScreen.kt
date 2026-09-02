@@ -63,9 +63,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -1205,11 +1207,39 @@ fun MetaDetailsScreen(
                                     progressByVideoId = progressByVideoId,
                                 )
                             }
+                            // Whether marking just this episode watched is the action that finishes the
+                            // season — checked against the other episodes' current state, not this one's,
+                            // since isSeasonWatched above still reflects the pre-toggle state.
+                            val willCompleteSeasonOnMark = remember(
+                                seasonEpisodes,
+                                selectedEpisode,
+                                isSelectedEpisodeWatched,
+                                isSeasonWatched,
+                                watchedUiState.watchedKeys,
+                                progressByVideoId,
+                            ) {
+                                !isSelectedEpisodeWatched && !isSeasonWatched && seasonEpisodes
+                                    .filterNot { it == selectedEpisode }
+                                    .all { other ->
+                                        isEpisodeWatchedForActions(
+                                            meta = meta,
+                                            episode = other,
+                                            watchedKeys = watchedUiState.watchedKeys,
+                                            progressByVideoId = progressByVideoId,
+                                        )
+                                    }
+                            }
+                            val seasonLabel = selectedEpisode.season?.let {
+                                stringResource(Res.string.episodes_season, it)
+                            } ?: stringResource(Res.string.episodes_specials)
+                            val seasonCompletedToastText = stringResource(
+                                Res.string.episode_season_completed_toast,
+                                seasonLabel,
+                            )
+                            val hapticFeedback = LocalHapticFeedback.current
                             EpisodeWatchedActionSheet(
                                 episode = selectedEpisode,
-                                seasonLabel = selectedEpisode.season?.let {
-                                    stringResource(Res.string.episodes_season, it)
-                                } ?: stringResource(Res.string.episodes_specials),
+                                seasonLabel = seasonLabel,
                                 isEpisodeWatched = isSelectedEpisodeWatched,
                                 canMarkPreviousEpisodes = previousEpisodes.isNotEmpty(),
                                 arePreviousEpisodesWatched = arePreviousEpisodesWatched,
@@ -1221,6 +1251,10 @@ fun MetaDetailsScreen(
                                         episode = selectedEpisode,
                                         isCurrentlyWatched = isSelectedEpisodeWatched,
                                     )
+                                    if (willCompleteSeasonOnMark) {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        NuvioToastController.show(seasonCompletedToastText)
+                                    }
                                 },
                                 onTogglePreviousWatched = {
                                     WatchingActions.togglePreviousEpisodesWatched(

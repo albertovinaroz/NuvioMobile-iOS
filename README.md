@@ -113,6 +113,7 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Your own OMDb API key** — add a free key so episode ratings draw from your own quota instead of sharing one with every other user. | Settings → Integrations → **OMDb** | Uses a shared key if left empty |
 | **Random Episode** — Play random episode for series. | 3 dots next to play button → **random icon** | — |
 | **Include watched episodes toggle** — Include watched episodes in random playback. | Settings → Playback → **Include watched episodes in random playback**| Off |
+| **Season-complete celebration** — a haptic tap and a toast when marking the last unwatched episode of a season as watched. | Episode watched-status sheet | Always on |
 
 ### Library
 
