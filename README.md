@@ -110,6 +110,8 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Budget and revenue** — added to the details block for movies. | Shown with Settings → Layout → Detail Page → **Details** | — |
 | **Real IMDb episode ratings** — episode cards show the actual IMDb rating (via OMDb) instead of TMDB's vote average, falling back to TMDB per episode when IMDb has none. | Settings → Integrations → TMDB Enrichment → **Episode ratings** | On |
 | **Your own OMDb API key** — add a free key so episode ratings draw from your own quota instead of sharing one with every other user. | Settings → Integrations → **OMDb** | Uses a shared key if left empty |
+| **Random Episode** — Play random episode for series. | 3 dots next to play button → **random icon** | — |
+| **Include watched episodes toggle** — Include watched episodes in random playback. | Settings → Playback → **Include watched episodes in random playback**| Off |
 
 ### Library
 
