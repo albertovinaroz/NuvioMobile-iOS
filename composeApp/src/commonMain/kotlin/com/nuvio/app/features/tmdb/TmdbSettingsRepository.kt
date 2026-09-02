@@ -61,6 +61,12 @@ object TmdbSettingsRepository {
         if (apiKey.isBlank()) {
             enabled = false
             TmdbSettingsStorage.saveEnabled(false)
+        } else if (!enabled) {
+            // Entering a key is a strong enough signal of intent that requiring a second,
+            // separate "Enable TMDB Enrichment" toggle afterward is just friction — this exact
+            // gap caused real user confusion while debugging NuvioMobile-iOS#2.
+            enabled = true
+            TmdbSettingsStorage.saveEnabled(true)
         }
         publish()
         TmdbSettingsStorage.saveApiKey(normalized)
