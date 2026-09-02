@@ -2,6 +2,7 @@ package com.nuvio.app.features.settings
 
 import co.touchlab.kermit.Logger
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,7 +58,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.core.format.resolveReleaseInfoForDisplay
 import com.nuvio.app.core.ui.NuvioPrimaryButton
 import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
@@ -65,6 +68,7 @@ import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.NuvioAsyncImage
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.details.MetaDetails
+import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryItem
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.LibraryUiState
@@ -95,12 +99,14 @@ internal fun LazyListScope.profileInsightsContent(
     isTablet: Boolean,
     onSwitchProfile: (() -> Unit)?,
     onEditProfile: (() -> Unit)?,
+    onPosterClick: ((MetaPreview) -> Unit)?,
 ) {
     item {
         ProfileInsightsBody(
             isTablet = isTablet,
             onSwitchProfile = onSwitchProfile,
             onEditProfile = onEditProfile,
+            onPosterClick = onPosterClick,
         )
     }
 }
@@ -110,6 +116,7 @@ private fun ProfileInsightsBody(
     isTablet: Boolean,
     onSwitchProfile: (() -> Unit)?,
     onEditProfile: (() -> Unit)?,
+    onPosterClick: ((MetaPreview) -> Unit)?,
 ) {
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val avatars by AvatarRepository.avatars.collectAsStateWithLifecycle()
@@ -254,6 +261,7 @@ private fun ProfileInsightsBody(
             collection = collection,
             isTablet = isTablet,
             onDismiss = { selectedInsightCollection = null },
+            onPosterClick = onPosterClick,
         )
     }
 
@@ -501,6 +509,10 @@ private fun ProfileHeroMetric(
     ) {
         Text(
             text = value,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 14.sp,
+                maxFontSize = MaterialTheme.typography.titleLarge.fontSize,
+            ),
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
             fontWeight = FontWeight.SemiBold,
@@ -508,6 +520,10 @@ private fun ProfileHeroMetric(
         )
         Text(
             text = label,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 8.sp,
+                maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+            ),
             style = MaterialTheme.typography.labelSmall,
             fontSize = 8.sp,
             letterSpacing = 0.sp,
@@ -626,6 +642,10 @@ private fun ProfileInsightStatCard(
                 Text(
                     text = tile.value,
                     modifier = Modifier.weight(1f, fill = false),
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 14.sp,
+                        maxFontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    ),
                     style = MaterialTheme.typography.titleLarge,
                     color = tokens.colors.textPrimary,
                     fontWeight = FontWeight.SemiBold,
@@ -649,6 +669,10 @@ private fun ProfileInsightStatCard(
             }
             Text(
                 text = tile.label,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 10.sp,
+                    maxFontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = tokens.colors.textPrimary,
                 fontWeight = FontWeight.Medium,
@@ -657,6 +681,10 @@ private fun ProfileInsightStatCard(
             )
             Text(
                 text = tile.caption,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 8.sp,
+                    maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 9.sp,
                 letterSpacing = 0.sp,
@@ -674,6 +702,7 @@ private fun ProfileInsightCollectionSheet(
     collection: ProfileInsightCollection,
     isTablet: Boolean,
     onDismiss: () -> Unit,
+    onPosterClick: ((MetaPreview) -> Unit)?,
 ) {
     val tokens = MaterialTheme.nuvio
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -717,7 +746,15 @@ private fun ProfileInsightCollectionSheet(
                     items = collection.items,
                     key = { item -> item.id },
                 ) { item ->
-                    ProfileInsightPosterTile(item = item)
+                    ProfileInsightPosterTile(
+                        item = item,
+                        onClick = onPosterClick?.let { callback ->
+                            { preview ->
+                                onDismiss()
+                                callback(preview)
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -727,25 +764,69 @@ private fun ProfileInsightCollectionSheet(
 @Composable
 private fun ProfileInsightPosterTile(
     item: ProfileInsightPosterItem,
+    onClick: ((MetaPreview) -> Unit)?,
 ) {
     val tokens = MaterialTheme.nuvio
+    val unknownLabel = stringResource(Res.string.generic_unknown)
     val initialImageUrl = remember(item.id, item.imageUrl) {
         item.imageUrl?.trim()?.takeIf { it.isNotBlank() }
     }
-    val cachedImageUrl = remember(item.id, item.lookupType, item.lookupId, initialImageUrl) {
-        initialImageUrl ?: profileCachedArtworkUrl(item.lookupType, item.lookupId)
+    val initialReleaseInfo = remember(item.id, item.releaseInfo) {
+        item.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
+    }
+    val cachedMeta = remember(item.id, item.lookupType, item.lookupId) {
+        profileCachedMeta(item.lookupType, item.lookupId)
+    }
+    val cachedImageUrl = remember(item.id, initialImageUrl, cachedMeta) {
+        initialImageUrl ?: cachedMeta.profileMetaArtworkUrl()
+    }
+    val cachedReleaseInfo = remember(item.id, initialReleaseInfo, cachedMeta) {
+        initialReleaseInfo ?: cachedMeta?.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
     }
     var resolvedImageUrl by remember(item.id, cachedImageUrl) {
         mutableStateOf(cachedImageUrl)
     }
-
-    LaunchedEffect(item.id, item.lookupType, item.lookupId, cachedImageUrl) {
-        resolvedImageUrl = cachedImageUrl
-        if (cachedImageUrl != null) return@LaunchedEffect
-        resolvedImageUrl = profileFetchArtworkUrl(item.lookupType, item.lookupId)
+    var resolvedReleaseInfo by remember(item.id, cachedReleaseInfo) {
+        mutableStateOf(cachedReleaseInfo)
     }
 
+    LaunchedEffect(item.id, item.lookupType, item.lookupId, cachedImageUrl, cachedReleaseInfo) {
+        resolvedImageUrl = cachedImageUrl
+        resolvedReleaseInfo = cachedReleaseInfo
+        if (cachedImageUrl != null && cachedReleaseInfo != null) return@LaunchedEffect
+        val (artwork, releaseInfo) = profileFetchPosterMetadata(item.lookupType, item.lookupId)
+        resolvedImageUrl = cachedImageUrl ?: artwork
+        resolvedReleaseInfo = cachedReleaseInfo ?: releaseInfo
+    }
+
+    val cleanType = item.lookupType?.trim()?.takeIf { it.isNotBlank() }
+    val cleanId = item.lookupId?.trim()?.takeIf { it.isNotBlank() }
+    val displayReleaseInfo = resolveReleaseInfoForDisplay(
+        stored = initialReleaseInfo,
+        hydrated = resolvedReleaseInfo,
+        fallback = unknownLabel,
+    )
+    val detailLine = listOfNotNull(
+        displayReleaseInfo,
+        item.secondaryText?.trim()?.takeIf { it.isNotBlank() },
+    ).joinToString(" • ")
+
     Column(
+        modifier = if (onClick != null && cleanType != null && cleanId != null) {
+            Modifier.clickable {
+                onClick(
+                    MetaPreview(
+                        id = cleanId,
+                        type = cleanType,
+                        name = item.title,
+                        poster = resolvedImageUrl,
+                        releaseInfo = resolvedReleaseInfo,
+                    ),
+                )
+            }
+        } else {
+            Modifier
+        },
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Box(
@@ -782,15 +863,13 @@ private fun ProfileInsightPosterTile(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        item.subtitle?.let { subtitle ->
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.labelSmall,
-                color = tokens.colors.textMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Text(
+            text = detailLine,
+            style = MaterialTheme.typography.labelSmall,
+            color = tokens.colors.textMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -1158,7 +1237,7 @@ private fun buildProfileInsightCollections(
             ProfileInsightPosterItem(
                 id = "continue:${entry.parentMetaId}:${entry.videoId}",
                 title = entry.title.trim().takeIf { it.isNotBlank() } ?: entry.parentMetaId,
-                subtitle = entry.profileEpisodeLine(),
+                secondaryText = entry.profileEpisodeLine(),
                 imageUrl = entry.poster ?: entry.episodeThumbnail ?: entry.background,
                 lookupType = entry.parentMetaType,
                 lookupId = entry.parentMetaId,
@@ -1179,7 +1258,7 @@ private fun buildProfileInsightCollections(
             ProfileInsightPosterItem(
                 id = "completed:${item.kind}:${item.id}",
                 title = item.title,
-                subtitle = item.subtitle,
+                releaseInfo = item.releaseInfo,
                 imageUrl = item.imageUrl,
                 lookupType = item.kind,
                 lookupId = item.id,
@@ -1193,7 +1272,7 @@ private fun buildProfileInsightCollections(
             ProfileInsightPosterItem(
                 id = "ongoing:${item.kind}:${item.id}",
                 title = item.title,
-                subtitle = item.subtitle,
+                releaseInfo = item.releaseInfo,
                 imageUrl = item.imageUrl,
                 lookupType = item.kind,
                 lookupId = item.id,
@@ -1209,7 +1288,7 @@ private fun buildProfileInsightCollections(
             ProfileInsightPosterItem(
                 id = "library:${item.id}:${item.type}",
                 title = item.name.trim().takeIf { it.isNotBlank() } ?: item.id,
-                subtitle = item.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
+                releaseInfo = item.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
                 imageUrl = item.poster ?: item.banner,
                 lookupType = item.type,
                 lookupId = item.id,
@@ -1226,7 +1305,7 @@ private fun buildProfileInsightCollections(
             ProfileInsightPosterItem(
                 id = "upcoming:${item.id}:${item.type}",
                 title = item.name.trim().takeIf { it.isNotBlank() } ?: item.id,
-                subtitle = item.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
+                releaseInfo = item.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
                 imageUrl = item.poster ?: item.banner,
                 lookupType = item.type,
                 lookupId = item.id,
@@ -1365,7 +1444,7 @@ private fun buildProfileWatchedContentBuckets(
                     ?: libraryItem?.name?.trim()?.takeIf { it.isNotBlank() }
                     ?: progressItem?.title?.trim()?.takeIf { it.isNotBlank() }
                     ?: item.id,
-                subtitle = item.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
+                releaseInfo = item.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
                     ?: libraryItem?.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
                 imageUrl = item.poster
                     ?: libraryItem?.poster
@@ -1405,7 +1484,7 @@ private fun buildProfileWatchedContentBuckets(
                         ?: progressItem?.title?.trim()?.takeIf { it.isNotBlank() }
                         ?: representative.name.trim().takeIf { it.isNotBlank() }
                         ?: representative.id,
-                    subtitle = topLevelMarker?.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
+                    releaseInfo = topLevelMarker?.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
                         ?: libraryItem?.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
                         ?: representative.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
                     imageUrl = topLevelMarker?.poster
@@ -1427,7 +1506,7 @@ private fun buildProfileWatchedContentBuckets(
                         ?: progressItem?.title?.trim()?.takeIf { it.isNotBlank() }
                         ?: representative.name.trim().takeIf { it.isNotBlank() }
                         ?: representative.id,
-                    subtitle = libraryItem?.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
+                    releaseInfo = libraryItem?.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
                         ?: representative.releaseInfo?.trim()?.takeIf { it.isNotBlank() },
                     imageUrl = libraryItem?.poster
                         ?: libraryItem?.banner
@@ -1528,22 +1607,30 @@ private fun WatchProgressEntry.profileArtworkUrl(): String? =
         ?: background?.takeIf { it.isNotBlank() }
         ?: episodeThumbnail?.takeIf { it.isNotBlank() }
 
-private suspend fun profileFetchArtworkUrl(type: String?, id: String?): String? {
+private suspend fun profileFetchPosterMetadata(type: String?, id: String?): Pair<String?, String?> {
+    var artwork: String? = null
+    var releaseInfo: String? = null
+
     for ((lookupType, lookupId) in profileMetaLookupCandidates(type, id)) {
-        profileCachedArtworkUrl(lookupType, lookupId)?.let { return it }
+        val meta = MetaDetailsRepository.peek(type = lookupType, id = lookupId)
+            ?: runCatching {
+                MetaDetailsRepository.fetch(type = lookupType, id = lookupId)
+            }.onFailure { error ->
+                profileInsightsLog.w(error) {
+                    "Failed to hydrate profile metadata for $lookupType/$lookupId"
+                }
+            }.getOrNull()
 
-        val hydratedMeta = runCatching {
-            MetaDetailsRepository.fetch(type = lookupType, id = lookupId)
-        }.onFailure { error ->
-            profileInsightsLog.w(error) {
-                "Failed to hydrate profile poster for $lookupType/$lookupId"
+        if (meta != null) {
+            artwork = artwork ?: meta.profileMetaArtworkUrl()
+            releaseInfo = releaseInfo ?: meta.releaseInfo?.trim()?.takeIf { it.isNotBlank() }
+            if (artwork != null && releaseInfo != null) {
+                return artwork to releaseInfo
             }
-        }.getOrNull()
-
-        hydratedMeta.profileMetaArtworkUrl()?.let { return it }
+        }
     }
 
-    return null
+    return artwork to releaseInfo
 }
 
 private fun profileCachedArtworkUrl(type: String?, id: String?): String? {
@@ -1905,7 +1992,8 @@ private data class ProfileInsightCollection(
 private data class ProfileInsightPosterItem(
     val id: String,
     val title: String,
-    val subtitle: String?,
+    val secondaryText: String? = null,
+    val releaseInfo: String? = null,
     val imageUrl: String?,
     val lookupType: String? = null,
     val lookupId: String? = null,
@@ -1915,7 +2003,7 @@ private data class ProfileCompletedContentItem(
     val id: String,
     val kind: String,
     val title: String,
-    val subtitle: String?,
+    val releaseInfo: String?,
     val imageUrl: String?,
     val markedAtEpochMs: Long,
 )

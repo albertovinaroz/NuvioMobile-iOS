@@ -66,6 +66,7 @@ import com.nuvio.app.features.debrid.DebridSettings
 import com.nuvio.app.features.debrid.DebridSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
+import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.buildAddonCatalogRefreshSignature
 import com.nuvio.app.features.livetv.LiveTvRepository
 import com.nuvio.app.features.mdblist.MdbListSettings
@@ -129,6 +130,7 @@ fun SettingsScreen(
     showInternalHeader: Boolean = true,
     onSwitchProfile: (() -> Unit)? = null,
     onEditProfile: (() -> Unit)? = null,
+    onPosterClick: ((MetaPreview) -> Unit)? = null,
     onHomescreenClick: () -> Unit = {},
     onMetaScreenClick: () -> Unit = {},
     onContinueWatchingClick: () -> Unit = {},
@@ -449,6 +451,7 @@ fun SettingsScreen(
                 posterCardStyleUiState = posterCardStyleUiState,
                 onSwitchProfile = onSwitchProfile,
                 onEditProfile = onEditProfile,
+                onPosterClick = onPosterClick,
                 onDownloadsClick = onDownloadsClick,
                 onSupportersContributorsClick = openSupportersContributors,
                 onLicensesAttributionsClick = openLicensesAttributions,
@@ -524,6 +527,7 @@ fun SettingsScreen(
                 posterCardStyleUiState = posterCardStyleUiState,
                 onSwitchProfile = onSwitchProfile,
                 onEditProfile = onEditProfile,
+                onPosterClick = onPosterClick,
                 onHomescreenClick = openHomescreen,
                 onMetaScreenClick = openMetaScreen,
                 onContinueWatchingClick = openContinueWatching,
@@ -609,6 +613,7 @@ private fun MobileSettingsScreen(
     posterCardStyleUiState: PosterCardStyleUiState,
     onSwitchProfile: (() -> Unit)? = null,
     onEditProfile: (() -> Unit)? = null,
+    onPosterClick: ((MetaPreview) -> Unit)? = null,
     onHomescreenClick: () -> Unit = {},
     onMetaScreenClick: () -> Unit = {},
     onContinueWatchingClick: () -> Unit = {},
@@ -755,6 +760,7 @@ private fun MobileSettingsScreen(
                     isTablet = false,
                     onSwitchProfile = onSwitchProfile,
                     onEditProfile = onEditProfile,
+                    onPosterClick = onPosterClick,
                 )
                 SettingsPage.SupportersContributors -> {
                     if (AppFeaturePolicy.supportersContributorsPageEnabled) {
@@ -1022,6 +1028,7 @@ private fun TabletSettingsScreen(
     posterCardStyleUiState: PosterCardStyleUiState,
     onSwitchProfile: (() -> Unit)? = null,
     onEditProfile: (() -> Unit)? = null,
+    onPosterClick: ((MetaPreview) -> Unit)? = null,
     onDownloadsClick: () -> Unit = {},
     onSupportersContributorsClick: () -> Unit = {},
     onLicensesAttributionsClick: () -> Unit = {},
@@ -1222,6 +1229,7 @@ private fun TabletSettingsScreen(
                         isTablet = true,
                         onSwitchProfile = onSwitchProfile,
                         onEditProfile = onEditProfile,
+                        onPosterClick = onPosterClick,
                     )
                     SettingsPage.SupportersContributors -> {
                         if (AppFeaturePolicy.supportersContributorsPageEnabled) {
