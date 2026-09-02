@@ -101,6 +101,7 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Animated profile switch** — tapping a profile glides its avatar to the center of the screen into the loading transition, instead of a hard cut. | Profile selection screen | Always on |
 | **Branded launch intro** — a quick wordmark reveal plays while the app resolves your session on cold start, replacing the old loading spinner. | App launch | Always on |
 | **Smooth theme color transitions** — the Nuvio wordmark crossfades between Supporter+ color themes instead of cutting abruptly when a profile uses a different one. | — | Always on |
+| **Haptic feedback on profile selection** — a light vibration on tap and again when the transition into the app starts. | Profile selection screen | Always on |
 
 ### Details & discovery
 
