@@ -2045,13 +2045,6 @@ private fun ConfiguredMetaSections(
                             isActive = isWatched,
                             onClick = onWatchedClick,
                         ))
-                        onRandomEpisodeClick?.let { playRandomEpisode ->
-                            add(DetailSecondaryAction(
-                                label = stringResource(Res.string.detail_play_random_episode),
-                                icon = Icons.Default.Shuffle,
-                                onClick = playRandomEpisode,
-                            ))
-                        }
                         add(DetailSecondaryAction(
                             label = if (isSaved) {
                                 stringResource(Res.string.hero_remove_from_library)
@@ -2067,6 +2060,13 @@ private fun ConfiguredMetaSections(
                             onClick = onSaveClick,
                             onLongClick = onSaveLongClick,
                         ))
+                        onRandomEpisodeClick?.let { playRandomEpisode ->
+                            add(DetailSecondaryAction(
+                                label = stringResource(Res.string.detail_play_random_episode),
+                                icon = Icons.Default.Shuffle,
+                                onClick = playRandomEpisode,
+                            ))
+                        }
                     },
                     isTablet = isTablet,
                     onPlayClick = onPrimaryPlayClick,

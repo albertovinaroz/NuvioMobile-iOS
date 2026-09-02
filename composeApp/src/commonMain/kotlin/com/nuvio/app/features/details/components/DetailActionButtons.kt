@@ -127,6 +127,12 @@ fun DetailActionButtons(
                         },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        // Without a weight, this Text measures at its own preferred width instead
+                        // of what's actually left after the icon — harmless with two secondary
+                        // actions, but with three the button gets narrow enough that the label
+                        // spills past the pill instead of eliding. fill = false keeps it centered
+                        // (matching the Row's own Arrangement.Center) when it isn't cramped.
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                 }
             }
