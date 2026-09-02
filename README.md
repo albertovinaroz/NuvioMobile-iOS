@@ -149,6 +149,7 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 | **Bundled CJK font** — fixes Chinese subtitle rendering. | — | — |
 | **Native-style Settings rows** — plain icon and chevron, no colored chips or section labels, matching the stock iOS/WhatsApp settings list look. | Settings | Always on |
 | **Pill-shaped search bars** — every search field (Settings, Search, Live TV, Player live channels, Cloud Library) uses a fully rounded pill, matching iOS conventions. | — | Always on |
+| **Liquid Glass mute button** — mutes the hero trailer without leaving Home, in the app's Liquid Glass style. | Top-right of the hero, while a trailer is playing | — |
 
 ---
 

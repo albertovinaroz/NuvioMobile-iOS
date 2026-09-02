@@ -1,12 +1,15 @@
 package com.nuvio.app.features.home.components
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -87,6 +90,9 @@ import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.toLibraryItem
 import com.nuvio.app.features.trailer.TrailerPlaybackResolver
 import com.nuvio.app.features.trailer.TrailerPlaybackSource
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -217,6 +223,8 @@ internal fun HomeHeroSection(
     onActiveArtworkChange: ((String?) -> Unit)? = null,
 ) {
     if (items.isEmpty()) return
+
+    val heroHazeState = remember { HazeState() }
 
     val pagerState = rememberPagerState(pageCount = { items.size })
     val coroutineScope = rememberCoroutineScope()
@@ -431,7 +439,9 @@ internal fun HomeHeroSection(
                 }
 
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .hazeSource(state = heroHazeState),
                 ) {
                     Box(
                         modifier = Modifier
@@ -641,29 +651,21 @@ internal fun HomeHeroSection(
                     }
 
                     if (heroTrailerReady && heroTrailerPlaybackSource != null) {
-                        val muteIconSize = 20.dp
-                        Box(
+                        HeroGlassIconButton(
+                            hazeState = heroHazeState,
+                            onClick = HeroTrailerAudioState::toggleMuted,
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(
                                     top = statusBarTopPadding + 12.dp,
                                     end = if (layout.isTablet) 32.dp else 18.dp,
-                                )
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.35f))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) {
-                                    HeroTrailerAudioState.toggleMuted()
-                                }
-                                .padding(8.dp),
+                                ),
                         ) {
                             Icon(
                                 imageVector = if (heroTrailerMuted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(muteIconSize),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
@@ -680,6 +682,47 @@ internal fun HomeHeroSection(
                 coroutineScope = coroutineScope,
             )
         }
+    }
+}
+
+/**
+ * A small circular "Liquid Glass" button — the same blur-through recipe [NuvioNavigationBar] uses
+ * for the tab bar pill, sized down to an icon button and sourced from the hero artwork behind it
+ * instead of the screen content below the nav bar.
+ */
+@Composable
+private fun HeroGlassIconButton(
+    hazeState: HazeState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "hero_glass_button_press_scale",
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
+            .size(40.dp)
+            .clip(CircleShape)
+            .hazeEffect(state = hazeState) { blurRadius = 24.dp }
+            .background(Color(0xFF1C1C1E).copy(alpha = 0.55f))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        content()
     }
 }
 
