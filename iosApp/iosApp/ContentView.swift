@@ -1010,6 +1010,9 @@ struct TabContentView: View {
     let usesTabletFloatingTabBar: Bool
     @ObservedObject var coordinator: TabNavigationCoordinator
     @ObservedObject var appCoordinator: AppNavigationCoordinator
+    // Only Home's hero ever has a trailer to mute, and only one TabContentView (whichever tab is
+    // current) needs to actually observe — see the `tab == .home` guards below on start/stop.
+    @StateObject private var trailerMuteViewModel = HeroTrailerMuteViewModel()
 
     var body: some View {
         NavigationStack(
@@ -1065,6 +1068,30 @@ struct TabContentView: View {
             appCoordinator.tabBarBehavior == .autoHide ? .easeInOut(duration: 0.18) : nil,
             value: appCoordinator.isNativeTabBarVisible
         )
+        // Home's hero has no visible navigation bar to host a toolbar item in (it's hidden
+        // above), so its mute button is a floating overlay instead — Details gets a real toolbar
+        // item since its navigation bar is visible.
+        .overlay(alignment: .topTrailing) {
+            if tab == .home && coordinator.path.isEmpty && trailerMuteViewModel.visible {
+                HeroTrailerMuteButton(muted: trailerMuteViewModel.muted) {
+                    trailerMuteViewModel.toggle()
+                }
+                .padding(.top, 8)
+                .padding(.trailing, 18)
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: trailerMuteViewModel.visible)
+        .onAppear {
+            if tab == .home {
+                trailerMuteViewModel.startObserving()
+            }
+        }
+        .onDisappear {
+            if tab == .home {
+                trailerMuteViewModel.stopObserving()
+            }
+        }
     }
 }
 
@@ -1095,6 +1122,7 @@ private struct DetailDestinationView: View {
     let wrapper: RouteWrapper
     @ObservedObject var coordinator: TabNavigationCoordinator
     @ObservedObject var appCoordinator: AppNavigationCoordinator
+    @StateObject private var trailerMuteViewModel = HeroTrailerMuteViewModel()
 
     private var usesComposeNavigationHeader: Bool {
         wrapper.route is DetailRoute || wrapper.route is StreamRoute
@@ -1124,6 +1152,21 @@ private struct DetailDestinationView: View {
                 NativeToolbarReadabilityFade()
             }
         }
+        // A ToolbarItem here — even with HeroTrailerMuteButton's `.fixedSize()` — still clipped
+        // it against the nav bar's own (shorter than 44pt) row height, which looks the same as
+        // the original oval/shadow symptom from further away. A plain overlay avoids the toolbar's
+        // sizing entirely, same as Home's copy of this button, which has never had this problem.
+        .overlay(alignment: .topTrailing) {
+            if trailerMuteViewModel.visible {
+                HeroTrailerMuteButton(muted: trailerMuteViewModel.muted) {
+                    trailerMuteViewModel.toggle()
+                }
+                .padding(.top, 12)
+                .padding(.trailing, 18)
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: trailerMuteViewModel.visible)
         .navigationTitle(wrapper.route.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarRole(usesComposeNavigationHeader ? .editor : .automatic)
@@ -1139,6 +1182,8 @@ private struct DetailDestinationView: View {
             wrapper.route.hidesNavigationBar ? Visibility.hidden : Visibility.visible,
             for: .navigationBar
         )
+        .onAppear(perform: trailerMuteViewModel.startObserving)
+        .onDisappear(perform: trailerMuteViewModel.stopObserving)
     }
 
     @ViewBuilder
@@ -1147,6 +1192,91 @@ private struct DetailDestinationView: View {
             content.navigationSubtitle(wrapper.route.subtitle ?? "")
         } else {
             content
+        }
+    }
+}
+
+/// Bridges `HeroTrailerAudioState` (Kotlin) to this native mute button — mirrors
+/// `NativeProfileSwitcherViewModel`'s observe/stop lifecycle, tied to `.onAppear`/`.onDisappear`
+/// rather than init/deinit so navigating away cancels the underlying coroutine promptly.
+@available(iOS 16.0, *)
+@MainActor
+private final class HeroTrailerMuteViewModel: ObservableObject {
+    @Published private(set) var visible = false
+    @Published private(set) var muted = true
+
+    private let controller = HeroTrailerMuteController()
+
+    func startObserving() {
+        controller.observeState { [weak self] visible, muted in
+            self?.visible = visible.boolValue
+            self?.muted = muted.boolValue
+        }
+    }
+
+    func stopObserving() {
+        controller.stopObserving()
+    }
+
+    func toggle() {
+        controller.toggleMuted()
+    }
+}
+
+/// A hero trailer's mute toggle, styled to match the automatic Liquid Glass treatment a
+/// `NavigationStack`'s own back button gets for free on iOS 26 — used both as a Details toolbar
+/// item (which would otherwise get that treatment automatically) and as a floating overlay on
+/// Home, whose hero has no visible navigation bar to host a toolbar item in at all.
+@available(iOS 16.0, *)
+private struct HeroTrailerMuteButton: View {
+    let muted: Bool
+    let action: () -> Void
+
+    private var icon: some View {
+        Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(.white)
+    }
+
+    private static let diameter: CGFloat = 44
+
+    var body: some View {
+        // Deliberately not a real Button: inside a ToolbarItem (Details), the system wraps any
+        // Button in its own automatic toolbar-button chrome. And `background` gets its own
+        // `.frame` fixed to a real 44x44 *before* glassEffect touches it, rather than sizing
+        // itself off whatever `icon` (or a ToolbarItem's own row-height constraint) proposes —
+        // `Circle()` inscribes itself in whatever rect it's finally given, so anything that
+        // compresses just one dimension along the way turns it into an oval.
+        ZStack {
+            background
+            icon
+        }
+        .frame(width: Self.diameter, height: Self.diameter)
+        // Forces this view to render at exactly that ideal 44x44 size regardless of what a
+        // demanding parent (a ToolbarItem's own row-height constraint, specifically) tries to
+        // propose instead — without this, hosting the exact same view in Details' toolbar
+        // (rather than a plain overlay, like Home's copy) came out oval no matter how the
+        // internal frame/background sizing was arranged.
+        .fixedSize()
+        .contentShape(Circle())
+        .onTapGesture(perform: action)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(muted ? "Unmute" : "Mute")
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if #available(iOS 26.0, *) {
+            // `.clear`, not `.regular` — matches NuvioGlassTabBar's own recipe. `.regular` reads
+            // as a dark, opaque-ish blob rather than blending with the content behind it.
+            Circle()
+                .fill(.clear)
+                .glassEffect(.clear.interactive(), in: Circle())
+                .frame(width: Self.diameter, height: Self.diameter)
+        } else {
+            Circle()
+                .fill(.ultraThinMaterial)
+                .frame(width: Self.diameter, height: Self.diameter)
         }
     }
 }

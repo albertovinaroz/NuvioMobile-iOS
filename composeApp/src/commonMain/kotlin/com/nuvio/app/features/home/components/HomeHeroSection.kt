@@ -1,15 +1,11 @@
 package com.nuvio.app.features.home.components
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -74,6 +70,7 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.build.TrailerPlaybackMode
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
+import com.nuvio.app.core.ui.HeroGlassIconButton
 import com.nuvio.app.core.ui.dynamicScrimAlpha
 import com.nuvio.app.core.ui.heroStretchHeight
 import com.nuvio.app.core.ui.heroStretchZoom
@@ -88,10 +85,10 @@ import com.nuvio.app.features.home.HomeHeroStyle
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.toLibraryItem
+import com.nuvio.app.navigation.LocalUseNativeNavigation
 import com.nuvio.app.features.trailer.TrailerPlaybackResolver
 import com.nuvio.app.features.trailer.TrailerPlaybackSource
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -650,7 +647,29 @@ internal fun HomeHeroSection(
                         }
                     }
 
-                    if (heroTrailerReady && heroTrailerPlaybackSource != null) {
+                    // Once scrolled far enough that the trailer itself pauses (see
+                    // isHeroScrolledAway above, gating HeroTrailerPlayerSurface's playWhenReady),
+                    // there's nothing left to mute — fold that into the same visibility signal
+                    // driving both the native button (HeroTrailerAudioState) and Compose's own,
+                    // rather than leaving it floating over content it no longer controls.
+                    val isHeroScrolledAwayForMute = scrollOffsetPx >= heroHeightPx * 0.6f
+                    val heroTrailerMuteVisible = heroTrailerReady &&
+                        heroTrailerPlaybackSource != null &&
+                        !isHeroScrolledAwayForMute
+                    val heroTrailerMuteAlpha by animateFloatAsState(
+                        targetValue = if (heroTrailerMuteVisible) 1f else 0f,
+                        animationSpec = tween(220),
+                        label = "home_hero_mute_alpha",
+                    )
+                    // Native platforms (iOS) show a real floating button instead — see
+                    // HeroTrailerMuteButton in ContentView.swift.
+                    LaunchedEffect(heroTrailerMuteVisible) {
+                        HeroTrailerAudioState.setVisible(heroTrailerMuteVisible)
+                    }
+                    DisposableEffect(Unit) {
+                        onDispose { HeroTrailerAudioState.setVisible(false) }
+                    }
+                    if ((heroTrailerMuteVisible || heroTrailerMuteAlpha > 0.01f) && !LocalUseNativeNavigation.current) {
                         HeroGlassIconButton(
                             hazeState = heroHazeState,
                             onClick = HeroTrailerAudioState::toggleMuted,
@@ -659,7 +678,8 @@ internal fun HomeHeroSection(
                                 .padding(
                                     top = statusBarTopPadding + 12.dp,
                                     end = if (layout.isTablet) 32.dp else 18.dp,
-                                ),
+                                )
+                                .graphicsLayer { alpha = heroTrailerMuteAlpha },
                         ) {
                             Icon(
                                 imageVector = if (heroTrailerMuted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
@@ -682,47 +702,6 @@ internal fun HomeHeroSection(
                 coroutineScope = coroutineScope,
             )
         }
-    }
-}
-
-/**
- * A small circular "Liquid Glass" button — the same blur-through recipe [NuvioNavigationBar] uses
- * for the tab bar pill, sized down to an icon button and sourced from the hero artwork behind it
- * instead of the screen content below the nav bar.
- */
-@Composable
-private fun HeroGlassIconButton(
-    hazeState: HazeState,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.88f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "hero_glass_button_press_scale",
-    )
-
-    Box(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-            }
-            .size(40.dp)
-            .clip(CircleShape)
-            .hazeEffect(state = hazeState) { blurRadius = 24.dp }
-            .background(Color(0xFF1C1C1E).copy(alpha = 0.55f))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        content()
     }
 }
 

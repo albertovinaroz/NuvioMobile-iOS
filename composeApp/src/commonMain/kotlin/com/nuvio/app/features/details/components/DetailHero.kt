@@ -31,7 +31,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,9 +51,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.ui.HeroGlassIconButton
 import com.nuvio.app.core.ui.heroStretchHeight
 import com.nuvio.app.core.ui.heroStretchZoom
+import com.nuvio.app.features.details.HeroTrailerAudioState
 import com.nuvio.app.features.details.MetaDetails
+import com.nuvio.app.navigation.LocalUseNativeNavigation
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -79,6 +86,7 @@ fun DetailHero(
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth(),
     ) {
+        val heroHazeState = remember { HazeState() }
         val heroHeight = detailHeroHeight(maxWidth, isTablet)
         val trailerAlpha by animateFloatAsState(
             targetValue = if (heroTrailerReady) 1f else 0f,
@@ -86,9 +94,12 @@ fun DetailHero(
             label = "detail_hero_trailer_alpha",
         )
         val muteIconSize = if (isTablet) 20.dp else 22.dp
-        val heroChromeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
-            8.dp +
-            ((40.dp - muteIconSize) / 2)
+        // Matches the back button's own top inset (see DetailHeaderOverlay/NuvioBackButton in
+        // MetaDetailsScreen.kt) — but that button is an overlay anchored to the true screen top,
+        // while this one is nested inside the hero itself, so the same statusBars+Ndp formula
+        // doesn't necessarily land at the same absolute Y — adjust this by eye against the back
+        // button, not by re-deriving the formula.
+        val heroChromeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val bottomGradientColor = heroGradientColor ?: MaterialTheme.colorScheme.background
         var logoLoadError by remember(meta.id, meta.logo) {
             mutableStateOf(false)
@@ -97,6 +108,27 @@ fun DetailHero(
 
         val heroBaseHeightPx = with(LocalDensity.current) { heroHeight.roundToPx() }
         LaunchedEffect(heroBaseHeightPx) { onHeightChanged(heroBaseHeightPx) }
+
+        // Same 60%-of-hero-height threshold Home's own copy of this button fades out at — past
+        // this point the hero has scrolled far enough that there's nothing left worth muting.
+        val isHeroScrolledAwayForMute by remember(heroBaseHeightPx) {
+            derivedStateOf { scrollOffset() >= heroBaseHeightPx * 0.6f }
+        }
+        val trailerMuteVisible = heroTrailerReady && !isHeroScrolledAwayForMute
+        val trailerMuteAlpha by animateFloatAsState(
+            targetValue = if (trailerMuteVisible) 1f else 0f,
+            animationSpec = tween(220),
+            label = "detail_hero_mute_alpha",
+        )
+        // Native platforms (iOS) render a real overlay button instead of the Compose one below
+        // (see HeroTrailerMuteButton in ContentView.swift) — this is what tells it a trailer is
+        // showing here at all, and to hand its taps to onHeroTrailerMuteToggle.
+        LaunchedEffect(trailerMuteVisible) {
+            HeroTrailerAudioState.setVisible(trailerMuteVisible)
+        }
+        DisposableEffect(Unit) {
+            onDispose { HeroTrailerAudioState.setVisible(false) }
+        }
 
         Box(
             modifier = Modifier
@@ -108,7 +140,8 @@ fun DetailHero(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .hazeSource(state = heroHazeState),
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 val imageUrl = meta.background ?: meta.poster
@@ -173,34 +206,43 @@ fun DetailHero(
                                 onClick = onHeroTrailerMuteToggle,
                             ),
                     )
-                    AnimatedContent(
-                        targetState = heroTrailerMuted,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(
-                                top = heroChromeTopPadding,
-                                end = if (isTablet) 32.dp else 22.dp,
-                            )
-                            .graphicsLayer {
-                                alpha = trailerAlpha * 0.72f
-                            },
-                        transitionSpec = {
-                            (fadeIn(animationSpec = tween(120)) + scaleIn(
-                                initialScale = 0.82f,
-                                animationSpec = tween(160),
-                            )) togetherWith (fadeOut(animationSpec = tween(90)) + scaleOut(
-                                targetScale = 1.12f,
-                                animationSpec = tween(100),
-                            ))
-                        },
-                        label = "detail_hero_trailer_mute_icon",
-                    ) { muted ->
-                        Icon(
-                            imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(muteIconSize),
-                        )
+                    // Native platforms (iOS) show a real overlay button instead — see the
+                    // HeroTrailerAudioState.setVisible() effect above.
+                    if ((trailerMuteVisible || trailerMuteAlpha > 0.01f) && !LocalUseNativeNavigation.current) {
+                        HeroGlassIconButton(
+                            hazeState = heroHazeState,
+                            onClick = onHeroTrailerMuteToggle,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(
+                                    top = heroChromeTopPadding,
+                                    end = if (isTablet) 32.dp else 22.dp,
+                                )
+                                .graphicsLayer {
+                                    alpha = trailerMuteAlpha
+                                },
+                        ) {
+                            AnimatedContent(
+                                targetState = heroTrailerMuted,
+                                transitionSpec = {
+                                    (fadeIn(animationSpec = tween(120)) + scaleIn(
+                                        initialScale = 0.82f,
+                                        animationSpec = tween(160),
+                                    )) togetherWith (fadeOut(animationSpec = tween(90)) + scaleOut(
+                                        targetScale = 1.12f,
+                                        animationSpec = tween(100),
+                                    ))
+                                },
+                                label = "detail_hero_trailer_mute_icon",
+                            ) { muted ->
+                                Icon(
+                                    imageVector = if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(muteIconSize),
+                                )
+                            }
+                        }
                     }
                 }
 
