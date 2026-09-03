@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import ComposeApp
 
 enum NuvioTabBarBehavior: String, CaseIterable {
@@ -31,6 +32,21 @@ struct NuvioGlassTabBar: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private static let barGlassID = "nuvio.tabbar"
+    // Kept as one prepared instance rather than a fresh generator per tap, so the very first tap
+    // after the bar appears doesn't eat the ~100ms warm-up latency.
+    private static let tapFeedback: UIImpactFeedbackGenerator = {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        return generator
+    }()
+    // Shared with HapticsSettingsStorage.ios.kt (Settings > Advanced > Tab Bar Haptics), which
+    // writes this exact key — read fresh on every tap rather than cached, since the toggle can
+    // flip while this bar is already on screen.
+    private static var tapHapticsEnabled: Bool {
+        let key = "NuvioTabBarHapticsEnabled"
+        let defaults = UserDefaults.standard
+        return defaults.object(forKey: key) == nil ? true : defaults.bool(forKey: key)
+    }
 
     static let portraitBottomInset: CGFloat = 20
     static let landscapeBottomInset: CGFloat = 16
@@ -105,6 +121,10 @@ struct NuvioGlassTabBar: View {
         }
 
         let button = Button {
+            if Self.tapHapticsEnabled {
+                Self.tapFeedback.impactOccurred()
+                Self.tapFeedback.prepare()
+            }
             if selected {
                 if isExpanded {
                     // Tapping the already-selected tab while expanded matches the real system tab

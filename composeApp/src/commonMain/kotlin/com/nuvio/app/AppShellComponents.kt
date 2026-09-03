@@ -50,14 +50,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.core.haptics.NativeImpactHapticFeedback
 import com.nuvio.app.core.ui.DisintegrationRequest
 import com.nuvio.app.core.ui.NativeTabBridge
 import com.nuvio.app.core.ui.NuvioAsyncImage
@@ -83,6 +86,7 @@ import com.nuvio.app.features.profiles.parseHexColor
 import com.nuvio.app.features.profiles.profileAvatarImageUrl
 import com.nuvio.app.features.search.SearchScreen
 import com.nuvio.app.features.settings.AppBrandWordmark
+import com.nuvio.app.features.settings.HapticsSettingsRepository
 import com.nuvio.app.features.settings.SettingsScreen
 import com.nuvio.app.features.watchprogress.ContinueWatchingItem
 import com.nuvio.app.navigation.AppRoute
@@ -456,6 +460,12 @@ internal fun AppLoadingContent(
     val ringScale = remember { Animatable(0.7f) }
     val ringAlpha = remember { Animatable(0f) }
     val density = LocalDensity.current
+    val hapticFeedback = LocalHapticFeedback.current
+    val interfaceHapticsFlow = remember {
+        HapticsSettingsRepository.ensureLoaded()
+        HapticsSettingsRepository.interfaceEnabled
+    }
+    val interfaceHapticsEnabled by interfaceHapticsFlow.collectAsStateWithLifecycle()
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val profileTabIconFrame by NativeTabBridge.profileTabIconFrame.collectAsStateWithLifecycle()
 
@@ -550,6 +560,13 @@ internal fun AppLoadingContent(
             emblemAlpha.animateTo(0f, animationSpec = tween(180, delayMillis = travelDuration - 180))
         }
         emblemOffsetY.animateTo(targetY, animationSpec = tween(travelDuration, easing = FastOutSlowInEasing))
+        // A firmer "landing" bump right as the emblem settles into the real tab icon, distinct
+        // from the lighter tick on the initial tap — reads as the shrink-and-merge motion coming
+        // to a physical stop rather than just fading away.
+        if (interfaceHapticsEnabled) {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            NativeImpactHapticFeedback.perform()
+        }
         onExitFinished()
     }
 

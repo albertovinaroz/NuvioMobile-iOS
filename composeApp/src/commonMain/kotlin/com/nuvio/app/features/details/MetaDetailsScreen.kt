@@ -118,6 +118,7 @@ import com.nuvio.app.features.library.showTrackingMembershipRewriteFeedback
 import com.nuvio.app.features.library.toLibraryItem
 import com.nuvio.app.features.player.PlayerSettingsRepository
 import com.nuvio.app.features.player.RandomEpisodePlaybackTracker
+import com.nuvio.app.features.settings.HapticsSettingsRepository
 import com.nuvio.app.features.streams.StreamAutoPlayPolicy
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.trakt.TraktAuthRepository
@@ -1237,6 +1238,11 @@ fun MetaDetailsScreen(
                                 seasonLabel,
                             )
                             val hapticFeedback = LocalHapticFeedback.current
+                            val interfaceHapticsFlow = remember {
+                                HapticsSettingsRepository.ensureLoaded()
+                                HapticsSettingsRepository.interfaceEnabled
+                            }
+                            val interfaceHapticsEnabled by interfaceHapticsFlow.collectAsStateWithLifecycle()
                             EpisodeWatchedActionSheet(
                                 episode = selectedEpisode,
                                 seasonLabel = seasonLabel,
@@ -1252,7 +1258,9 @@ fun MetaDetailsScreen(
                                         isCurrentlyWatched = isSelectedEpisodeWatched,
                                     )
                                     if (willCompleteSeasonOnMark) {
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        if (interfaceHapticsEnabled) {
+                                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        }
                                         NuvioToastController.show(seasonCompletedToastText)
                                     }
                                 },

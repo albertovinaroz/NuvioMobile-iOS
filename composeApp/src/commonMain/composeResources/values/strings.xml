@@ -560,6 +560,11 @@
     <string name="settings_advanced_section_diagnostics">DIAGNOSTICS</string>
     <string name="settings_advanced_section_cache">CACHE</string>
     <string name="settings_advanced_section_debugging">DEBUGGING</string>
+    <string name="settings_advanced_section_haptics">HAPTICS</string>
+    <string name="settings_advanced_tab_bar_haptics">Tab Bar Haptics</string>
+    <string name="settings_advanced_tab_bar_haptics_description">Vibrate lightly when switching tabs</string>
+    <string name="settings_advanced_interface_haptics">Interface Haptics</string>
+    <string name="settings_advanced_interface_haptics_description">Vibrate on profile selection and other interface moments</string>
     <string name="settings_advanced_debug_logs">Debug Logs</string>
     <string name="settings_advanced_debug_logs_description">View, copy, or clear in-app debug logs</string>
     <string name="settings_advanced_debugging_copy_logs">Copy Logs to Clipboard</string>

@@ -39,12 +39,17 @@ import nuvio.composeapp.generated.resources.settings_advanced_clear_cw_cache_don
 import nuvio.composeapp.generated.resources.settings_advanced_clear_cw_cache_subtitle
 import nuvio.composeapp.generated.resources.settings_advanced_debug_logs
 import nuvio.composeapp.generated.resources.settings_advanced_debug_logs_description
+import nuvio.composeapp.generated.resources.settings_advanced_interface_haptics
+import nuvio.composeapp.generated.resources.settings_advanced_interface_haptics_description
 import nuvio.composeapp.generated.resources.settings_advanced_remember_last_profile
 import nuvio.composeapp.generated.resources.settings_advanced_remember_last_profile_description
 import nuvio.composeapp.generated.resources.settings_advanced_section_cache
 import nuvio.composeapp.generated.resources.settings_advanced_section_debugging
 import nuvio.composeapp.generated.resources.settings_advanced_section_diagnostics
+import nuvio.composeapp.generated.resources.settings_advanced_section_haptics
 import nuvio.composeapp.generated.resources.settings_advanced_section_startup
+import nuvio.composeapp.generated.resources.settings_advanced_tab_bar_haptics
+import nuvio.composeapp.generated.resources.settings_advanced_tab_bar_haptics_description
 import nuvio.composeapp.generated.resources.settings_advanced_sentry_reports
 import nuvio.composeapp.generated.resources.settings_advanced_sentry_reports_subtitle
 import nuvio.composeapp.generated.resources.sentry_disable_dialog_subtitle
@@ -79,6 +84,40 @@ internal fun LazyListScope.advancedSettingsContent(
                     checked = rememberLastProfileEnabled,
                     isTablet = isTablet,
                     onCheckedChange = ProfileRepository::setRememberLastProfileEnabled,
+                )
+            }
+        }
+    }
+    item {
+        val tabBarHapticsFlow = remember {
+            HapticsSettingsRepository.ensureLoaded()
+            HapticsSettingsRepository.tabBarEnabled
+        }
+        val interfaceHapticsFlow = remember {
+            HapticsSettingsRepository.ensureLoaded()
+            HapticsSettingsRepository.interfaceEnabled
+        }
+        val tabBarHapticsEnabled by tabBarHapticsFlow.collectAsStateWithLifecycle()
+        val interfaceHapticsEnabled by interfaceHapticsFlow.collectAsStateWithLifecycle()
+
+        SettingsSection(
+            title = stringResource(Res.string.settings_advanced_section_haptics),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_advanced_tab_bar_haptics),
+                    description = stringResource(Res.string.settings_advanced_tab_bar_haptics_description),
+                    checked = tabBarHapticsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = HapticsSettingsRepository::setTabBarEnabled,
+                )
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_advanced_interface_haptics),
+                    description = stringResource(Res.string.settings_advanced_interface_haptics_description),
+                    checked = interfaceHapticsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = HapticsSettingsRepository::setInterfaceEnabled,
                 )
             }
         }

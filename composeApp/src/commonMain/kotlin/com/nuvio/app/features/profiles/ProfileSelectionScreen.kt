@@ -63,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.NuvioAsyncImage
 import com.nuvio.app.features.membership.CosmeticEntitlement
 import com.nuvio.app.features.settings.AppBrandWordmark
+import com.nuvio.app.features.settings.HapticsSettingsRepository
 import com.nuvio.app.features.settings.SupporterBadgeIfPresent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,6 +86,11 @@ fun ProfileSelectionScreen(
     val profileState by ProfileRepository.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val hapticFeedback = LocalHapticFeedback.current
+    val interfaceHapticsFlow = remember {
+        HapticsSettingsRepository.ensureLoaded()
+        HapticsSettingsRepository.interfaceEnabled
+    }
+    val interfaceHapticsEnabled by interfaceHapticsFlow.collectAsStateWithLifecycle()
     // Paired with the tapped avatar's on-screen center at the moment of the tap, so once the PIN
     // is verified the caller can still glide the transition emblem out from that exact spot.
     var pendingPinSelection by remember { mutableStateOf<Pair<NuvioProfile, Offset>?>(null) }
@@ -100,11 +106,14 @@ fun ProfileSelectionScreen(
     val contentFadeAlpha = remember { Animatable(1f) }
     val onProfileClick: (NuvioProfile, Offset) -> Unit = { profile, tapCenter ->
         if (interactionEnabled) {
-            // Compose's standard haptic call is a no-op on iOS in this Compose Multiplatform
-            // version, so it's paired with the app's own native iOS haptic generator — a no-op
-            // on Android, where the standard call above already fires the real vibration.
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            ProfileHoverHapticFeedback.perform()
+            if (interfaceHapticsEnabled) {
+                // Compose's standard haptic call is a no-op on iOS in this Compose Multiplatform
+                // version, so it's paired with the app's own native iOS haptic generator — a
+                // no-op on Android, where the standard call above already fires the real
+                // vibration.
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                ProfileHoverHapticFeedback.perform()
+            }
             routeProfileSelection(
                 profile = profile,
                 isEditMode = isEditMode,
@@ -130,7 +139,7 @@ fun ProfileSelectionScreen(
         // contentVisible flips to false the moment a profile is confirmed and this screen starts
         // fading out into the glide-to-center transition (driven by the same signal one level up)
         // — a second, distinct tap of feedback for that hand-off, not just the initial tap.
-        if (!contentVisible) {
+        if (!contentVisible && interfaceHapticsEnabled) {
             hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             ProfileHoverHapticFeedback.perform()
         }
