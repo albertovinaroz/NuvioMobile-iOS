@@ -25,7 +25,8 @@ concurrency:
 
 env:
   SOURCE_REPO: ${{ github.repository }}
-  EXPECTED_BUNDLE_ID: com.nuvio.media
+  EXPECTED_BUNDLE_ID_ENHANCED: com.nuvio.pro
+  EXPECTED_BUNDLE_ID_OFFICIAL: com.nuvio.media
 
 jobs:
   update:
@@ -68,7 +69,8 @@ jobs:
           from pathlib import Path
 
           REPO = os.environ["SOURCE_REPO"]
-          EXPECTED_BUNDLE_ID = os.environ["EXPECTED_BUNDLE_ID"]
+          EXPECTED_BUNDLE_ID_ENHANCED = os.environ["EXPECTED_BUNDLE_ID_ENHANCED"]
+          EXPECTED_BUNDLE_ID_OFFICIAL = os.environ["EXPECTED_BUNDLE_ID_OFFICIAL"]
           RELEASE_TAG = os.environ.get("RELEASE_TAG", "").strip()
 
           # "auto" (the default, and always what a real `release` event gets)
@@ -89,11 +91,13 @@ jobs:
                   Path("NuvioMobile-iOS-Enhanced.json"),
                   re.compile(r"^nuvio-.+-enhanced-release\.ipa$", re.IGNORECASE),
                   "Enhanced",
+                  EXPECTED_BUNDLE_ID_ENHANCED,
               ),
               (
                   Path("NuvioMobile-iOS-Official.json"),
                   re.compile(r"^nuvio-.+-official-release\.ipa$", re.IGNORECASE),
                   "Official",
+                  EXPECTED_BUNDLE_ID_OFFICIAL,
               ),
           ]
 
@@ -276,7 +280,7 @@ jobs:
               }
 
 
-          def load_source(path):
+          def load_source(path, expected_bundle_id):
               if not path.exists():
                   sys.exit(
                       f"{path} is missing. "
@@ -299,30 +303,30 @@ jobs:
 
               if app.get(
                   "bundleIdentifier"
-              ) != EXPECTED_BUNDLE_ID:
+              ) != expected_bundle_id:
                   sys.exit(
                       f"{path}: expected bundleIdentifier "
-                      f"{EXPECTED_BUNDLE_ID}, found "
+                      f"{expected_bundle_id}, found "
                       f"{app.get('bundleIdentifier')!r}."
                   )
 
               return source, app
 
 
-          def update_source(path, label, release, asset):
-              source, app = load_source(path)
+          def update_source(path, label, release, asset, expected_bundle_id):
+              source, app = load_source(path, expected_bundle_id)
 
               blob = download_asset(asset)
               metadata = inspect_ipa(blob)
 
               if (
                   metadata["bundleIdentifier"]
-                  != EXPECTED_BUNDLE_ID
+                  != expected_bundle_id
               ):
                   sys.exit(
                       f"{label} IPA bundle ID is "
                       f"{metadata['bundleIdentifier']!r}, expected "
-                      f"{EXPECTED_BUNDLE_ID!r}."
+                      f"{expected_bundle_id!r}."
                   )
 
               version = metadata["version"]
@@ -473,7 +477,7 @@ jobs:
               return True
 
 
-          def validate_source(path):
+          def validate_source(path, expected_bundle_id):
               with path.open(
                   encoding="utf-8"
               ) as file:
@@ -490,7 +494,7 @@ jobs:
 
               if (
                   app.get("bundleIdentifier")
-                  != EXPECTED_BUNDLE_ID
+                  != expected_bundle_id
               ):
                   sys.exit(
                       f"{path}: incorrect bundleIdentifier."
@@ -557,7 +561,7 @@ jobs:
           any_matched = False
           any_changed = False
 
-          for path, pattern, label in sources_to_check:
+          for path, pattern, label, expected_bundle_id in sources_to_check:
               if CHANNEL == "auto":
                   # Real release events fire the instant the release is
                   # published, when the asset upload may not be visible via
@@ -576,9 +580,9 @@ jobs:
                   continue
 
               any_matched = True
-              changed = update_source(path, label, release, asset)
+              changed = update_source(path, label, release, asset, expected_bundle_id)
               any_changed = any_changed or changed
-              validate_source(path)
+              validate_source(path, expected_bundle_id)
 
           if not any_matched:
               sys.exit(

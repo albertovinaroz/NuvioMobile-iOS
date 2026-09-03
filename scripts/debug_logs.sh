@@ -76,7 +76,7 @@ Hotkeys (while running):
 Examples:
   ./scripts/debug_logs.sh
   ./scripts/debug_logs.sh --serial emulator-5554
-  ./scripts/debug_logs.sh --package com.nuvio.app
+  ./scripts/debug_logs.sh --package com.nuvio.pro
   ./scripts/debug_logs.sh --clear --p2p
   ./scripts/debug_logs.sh --serial emulator-5554 --clear --p2p
   ./scripts/debug_logs.sh --tag 'MetaDetailsRepo|SeriesContent'

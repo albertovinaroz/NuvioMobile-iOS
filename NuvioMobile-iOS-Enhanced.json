@@ -9,7 +9,7 @@
   "apps": [
     {
       "name": "Nuvio Pro",
-      "bundleIdentifier": "com.nuvio.media",
+      "bundleIdentifier": "com.nuvio.pro",
       "developerName": "albertovinaroz",
       "subtitle": "Watch your library, anywhere",
       "localizedDescription": "Unofficial build of Nuvio Mobile for iOS and iPadOS, based on luqmanfadlli's Nuvio Enhanced fork with additional custom features.",

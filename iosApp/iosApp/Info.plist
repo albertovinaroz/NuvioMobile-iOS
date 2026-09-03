@@ -10,7 +10,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.nuvio.app.auth</string>
+			<string>com.nuvio.pro.auth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>nuvio</string>
