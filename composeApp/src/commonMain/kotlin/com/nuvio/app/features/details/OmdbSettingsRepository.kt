@@ -27,6 +27,11 @@ object OmdbSettingsRepository {
         if (_apiKey.value == trimmed) return
         _apiKey.value = trimmed
         OmdbSettingsStorage.saveApiKey(trimmed)
+        // Any details screen already fetched and cached its enriched meta with whatever rating
+        // source was effective at the time (this key, the shared build key, or TMDB's fallback) —
+        // that cache has no way to know the key just changed, so without this it kept showing the
+        // stale source until the app was killed and relaunched.
+        MetaDetailsRepository.clear()
     }
 
     /** The user's own key when set, otherwise the build's baked-in key. */
