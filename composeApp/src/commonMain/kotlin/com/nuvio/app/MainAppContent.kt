@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -1862,7 +1862,7 @@ internal fun MainAppContent(
                                 },
                             ),
                             PosterZoomOverlayAction(
-                                icon = if (isWatched) Icons.Default.CheckCircle else Icons.Default.CheckCircleOutline,
+                                icon = if (isWatched) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 label = if (isWatched) {
                                     stringResource(Res.string.hero_mark_unwatched)
                                 } else {
