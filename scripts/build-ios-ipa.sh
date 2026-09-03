@@ -31,6 +31,14 @@ fi
 cd "${repository_root}"
 distribution="${NUVIO_IOS_DISTRIBUTION:-full}"
 release_label="${NUVIO_RELEASE_LABEL:-${distribution}}"
+# Printed unconditionally (not just on mismatch) so it's impossible to miss in the build log —
+# this defaults to "full" when unset, but a stray NUVIO_IOS_DISTRIBUTION=appstore left over in the
+# shell from an earlier command would otherwise silently ship a crippled build with no visible
+# trace until someone notices a missing feature after release.
+echo "==> Building distribution flavor: ${distribution}"
+if [[ "${distribution}" != "full" ]]; then
+    echo "==> WARNING: this is NOT the 'full' flavor — trailers, plugins, P2P, and other features are disabled in this build."
+fi
 build_environment=(
     env
     NUVIO_IOS_DISTRIBUTION="${distribution}"
