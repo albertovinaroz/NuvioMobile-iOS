@@ -1,14 +1,14 @@
 {
-  "name": "Nuvio Enhanced (Unofficial)",
-  "subtitle": "Custom builds of Nuvio Enhanced for AltStore and SideStore.",
-  "description": "Update channel for albertovinaroz's Nuvio Enhanced fork.",
+  "name": "Nuvio Pro (Unofficial)",
+  "subtitle": "Custom builds of Nuvio Pro for AltStore and SideStore.",
+  "description": "Update channel for albertovinaroz's Nuvio Pro fork.",
   "website": "https://github.com/albertovinaroz/NuvioMobile-iOS",
   "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
   "tintColor": "7B2FF7",
   "news": [],
   "apps": [
     {
-      "name": "Nuvio Enhanced",
+      "name": "Nuvio Pro",
       "bundleIdentifier": "com.nuvio.media",
       "developerName": "albertovinaroz",
       "subtitle": "Watch your library, anywhere",

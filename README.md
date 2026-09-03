@@ -2,7 +2,7 @@
 
   <img src="https://nuvio.tv/assets/nuvio-app-logo-wordmark.webp" alt="Nuvio" width="320" />
 
-  <h1>Nuvio Enhanced</h1>
+  <h1>Nuvio Pro</h1>
 
   <p>
     An unofficial fork of <a href="https://github.com/NuvioMedia/NuvioMobile">Nuvio Mobile</a> that keeps pace with
@@ -31,7 +31,7 @@ This repo publishes two separate iOS channels — pick one:
 
 | Channel | What it is |
 |---|---|
-| **Nuvio Enhanced** | Upstream Nuvio plus everything in [What Enhanced adds](#what-enhanced-adds) below. |
+| **Nuvio Pro** | Upstream Nuvio plus everything in [What Pro adds](#what-pro-adds) below. |
 | **Nuvio Unmodified** | A plain, unmodified build of NuvioMedia's own source — no fork changes, just a ready-to-sideload IPA kept in sync with their releases. |
 
 ### iOS — AltStore / SideStore
@@ -46,7 +46,7 @@ https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioM
 ```
 
 Or grab an IPA directly from [the latest release](https://github.com/albertovinaroz/NuvioMobile-iOS/releases/latest) —
-Enhanced and Unmodified builds are tagged and released separately, named `nuvio-<version>-enhanced-release.ipa` and
+Pro and Unmodified builds are tagged and released separately, named `nuvio-<version>-enhanced-release.ipa` and
 `nuvio-<version>-official-release.ipa`.
 
 > This fork is iOS-focused — there's no Android build published here. For Android, use
@@ -55,7 +55,7 @@ Enhanced and Unmodified builds are tagged and released separately, named `nuvio-
 
 ---
 
-## What Enhanced adds
+## What Pro adds
 
 Everything below is added on top of upstream Nuvio Mobile.
 
@@ -206,8 +206,8 @@ git merge upstream/cmp-rewrite
 Nuvio is built by [NuvioMedia](https://github.com/NuvioMedia) — all credit for the app itself belongs to them and its
 contributors. This repository only adds to their work. If you enjoy Nuvio, [support the upstream project](https://nuvio.tv/support).
 
-Thanks also to [luqmanfadlli](https://github.com/luqmanfadlli/NuvioMobile-Enhanced) for maintaining a sibling Enhanced
-fork we regularly trade improvements with.
+Thanks also to [luqmanfadlli](https://github.com/luqmanfadlli/NuvioMobile-Enhanced) for maintaining a sibling fork
+(Nuvio Enhanced) we regularly trade improvements with.
 
 ## License
 
