@@ -2,8 +2,8 @@
   "name": "Nuvio Pro (Unofficial)",
   "subtitle": "Custom builds of Nuvio Pro for AltStore and SideStore.",
   "description": "Update channel for albertovinaroz's Nuvio Pro fork.",
-  "website": "https://github.com/albertovinaroz/NuvioMobile-iOS",
-  "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+  "website": "https://github.com/albertovinaroz/NuvioPro",
+  "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioPro/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
   "tintColor": "7B2FF7",
   "news": [],
   "apps": [
@@ -13,7 +13,7 @@
       "developerName": "albertovinaroz",
       "subtitle": "Watch your library, anywhere",
       "localizedDescription": "Unofficial build of Nuvio Mobile for iOS and iPadOS, based on luqmanfadlli's Nuvio Enhanced fork with additional custom features.",
-      "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+      "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioPro/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
       "tintColor": "7B2FF7",
       "category": "entertainment",
       "versions": [

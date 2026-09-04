@@ -2,8 +2,8 @@
   "name": "Nuvio Unmodified (Unofficial)",
   "subtitle": "Unmodified Nuvio builds for AltStore and SideStore.",
   "description": "Unofficial update channel for an unmodified build of the NuvioMedia source. Not affiliated with or endorsed by NuvioMedia.",
-  "website": "https://github.com/albertovinaroz/NuvioMobile-iOS",
-  "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+  "website": "https://github.com/albertovinaroz/NuvioPro",
+  "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioPro/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
   "tintColor": "7B2FF7",
   "news": [],
   "apps": [
@@ -13,7 +13,7 @@
       "developerName": "albertovinaroz",
       "subtitle": "Watch your library, anywhere",
       "localizedDescription": "Unmodified build of the Nuvio Mobile source for iOS and iPadOS, with in-app updates, downloads, and trailer playback unlocked. Not affiliated with or endorsed by NuvioMedia.",
-      "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
+      "iconURL": "https://raw.githubusercontent.com/albertovinaroz/NuvioPro/pro/iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png",
       "tintColor": "7B2FF7",
       "category": "entertainment",
       "versions": [
