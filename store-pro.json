@@ -18,6 +18,15 @@
       "category": "entertainment",
       "versions": [
         {
+          "version": "0.4.13-b7",
+          "buildVersion": "132",
+          "date": "2026-09-04T12:30:56Z",
+          "localizedDescription": "# Nuvio Pro 0.4.13-b7\n\n**AltStore/SideStore source:**\n```\nhttps://raw.githubusercontent.com/albertovinaroz/NuvioPro/pro/store-pro.json\n```\n\n## Changelog\n\n### Pro\n- feat(app): change bundle/application ID to com.nuvio.pro, so it can install side by side with the official app instead of conflicting with it @albertovinaroz\n- chore: rename the GitHub repo and branch to match (`NuvioMobile-iOS` → `NuvioPro`, `enhanced` → `pro`) @albertovinaroz\n- fix(details): fix Skip Intro/Recap/Outro not detecting anything for non-anime shows, fixes #3 @albertovinaroz \n- feat(settings): show each contributor's total contribution count @luqmanfadlli\n- fix(trailer): resolve the hero trailer while its start delay is still running, so it starts sooner @luqmanfadlli\n- fix(profile): hide the custom background option for non-supporters @luqmanfadlli\n\n> **Updating from an older install?** This release changes the app's identity: the AltStore/SideStore source URL, the repo, and the app's bundle ID all changed. You'll need to re-add the source above (the old one will 404), and install fresh rather than update in place — expect to reconfigure a few local settings, since some data are tied to the app identifier and won't carry over automatically.\n\n> **Note for iOS users:** Since Nuvio embeds heavy media frameworks, sideloading tools like AltStore, SideStore, or Sideloadly have to manually re-sign thousands of internal components with your Apple ID certificate. If the installation progress bar looks stuck, don't close it — give it a few minutes to finish signing in the background.",
+          "downloadURL": "https://github.com/albertovinaroz/NuvioPro/releases/download/0.4.13-b7/nuvio-0.4.13-b7-pro-release.ipa",
+          "size": 66766596,
+          "minOSVersion": "16.1"
+        },
+        {
           "version": "0.4.13-b6",
           "buildVersion": "131",
           "date": "2026-09-03T18:10:08Z",
