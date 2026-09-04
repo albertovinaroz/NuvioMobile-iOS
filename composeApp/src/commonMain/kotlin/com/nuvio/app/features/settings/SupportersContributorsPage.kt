@@ -777,6 +777,15 @@ private fun ContributorRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            Text(
+                text = stringResource(
+                    Res.string.community_contributor_contributions,
+                    contributor.totalContributions,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
         }
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
