@@ -53,6 +53,14 @@ Pro and Unmodified builds are tagged and released separately, named `nuvio-<vers
 > [official Nuvio Mobile](https://github.com/NuvioMedia/NuvioMobile) or
 > [luqmanfadlli's Enhanced fork](https://github.com/luqmanfadlli/NuvioMobile-Enhanced).
 
+> **Updating from an older install?** As of `0.4.13-b7`, Nuvio Pro's app/bundle identifier changed
+> from the one it originally shared with the official app (`com.nuvio.media`) to its own
+> (`com.nuvio.pro`), so it can be installed side by side with the official app instead of
+> conflicting with it (see [luqmanfadlli/NuvioMobile-Enhanced#88](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/issues/88)).
+> This isn't an in-place update: re-add the AltStore/SideStore source above, install the new IPA
+> fresh, and expect to reconfigure a few local settings — profiles, PINs, and other on-device data
+> are tied to the app identifier and won't carry over automatically.
+
 ---
 
 ## What Pro adds
