@@ -218,7 +218,7 @@ fun ProfileEditScreen(
             }
         }
 
-        if (!isNew) {
+        if (canChooseBackground) {
             item {
                 NuvioSurfaceCard {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
