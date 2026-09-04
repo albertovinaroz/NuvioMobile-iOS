@@ -39,27 +39,33 @@ This repo publishes two separate iOS channels — pick one:
 Add whichever source(s) you want:
 
 ```
-https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Enhanced.json
+https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/pro/store-pro.json
 ```
 ```
-https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/enhanced/NuvioMobile-iOS-Official.json
+https://raw.githubusercontent.com/albertovinaroz/NuvioMobile-iOS/pro/store-unmodified.json
 ```
 
 Or grab an IPA directly from [the latest release](https://github.com/albertovinaroz/NuvioMobile-iOS/releases/latest) —
-Pro and Unmodified builds are tagged and released separately, named `nuvio-<version>-enhanced-release.ipa` and
-`nuvio-<version>-official-release.ipa`.
+Pro and Unmodified builds are tagged and released separately, named `nuvio-<version>-pro-release.ipa` and
+`nuvio-<version>-unmodified-release.ipa`.
 
 > This fork is iOS-focused — there's no Android build published here. For Android, use
 > [official Nuvio Mobile](https://github.com/NuvioMedia/NuvioMobile) or
 > [luqmanfadlli's Enhanced fork](https://github.com/luqmanfadlli/NuvioMobile-Enhanced).
 
-> **Updating from an older install?** As of `0.4.13-b7`, Nuvio Pro's app/bundle identifier changed
-> from the one it originally shared with the official app (`com.nuvio.media`) to its own
-> (`com.nuvio.pro`), so it can be installed side by side with the official app instead of
-> conflicting with it (see [luqmanfadlli/NuvioMobile-Enhanced#88](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/issues/88)).
-> This isn't an in-place update: re-add the AltStore/SideStore source above, install the new IPA
-> fresh, and expect to reconfigure a few local settings — profiles, PINs, and other on-device data
-> are tied to the app identifier and won't carry over automatically.
+> **Updating from an older install?** As of `0.4.13-b7`, both sources moved: the repo's branch
+> renamed `enhanced` → `pro`, and the source filenames changed to `store-pro.json` and
+> `store-unmodified.json` (from `NuvioMobile-iOS-Enhanced.json`/`NuvioMobile-iOS-Official.json`).
+> **Everyone** needs to re-add the source(s) above with the new URLs — the old ones will 404.
+>
+> Nuvio Pro's app/bundle identifier also changed, from the one it originally shared with the
+> official app (`com.nuvio.media`) to its own (`com.nuvio.pro`), so it can be installed side by
+> side with the official app instead of conflicting with it (see
+> [luqmanfadlli/NuvioMobile-Enhanced#88](https://github.com/luqmanfadlli/NuvioMobile-Enhanced/issues/88)).
+> This means a fresh install for Pro, not an in-place update — expect to reconfigure a few local
+> settings, since profiles, PINs, and other on-device data are tied to the app identifier and won't
+> carry over automatically. Nuvio Unmodified's identifier didn't change, so re-adding its source is
+> the only step needed there.
 
 ---
 
@@ -166,7 +172,7 @@ Upstream Nuvio has no Live TV. This fork adds the whole feature.
 ```bash
 git clone https://github.com/albertovinaroz/NuvioMobile-iOS.git
 cd NuvioMobile-iOS
-git checkout enhanced
+git checkout pro
 ```
 
 ### Android

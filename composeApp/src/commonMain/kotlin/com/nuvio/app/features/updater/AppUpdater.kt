@@ -26,7 +26,7 @@ import org.jetbrains.compose.resources.getString
 private const val gitHubOwner = "albertovinaroz"
 private const val gitHubRepo = "NuvioMobile-iOS"
 private const val gitHubApiBase = "https://api.github.com"
-private const val releaseChannelBranch = "enhanced"
+private const val releaseChannelBranch = "pro"
 
 data class AppUpdate(
     val tag: String,

@@ -11,7 +11,7 @@ on:
         description: Which source to update (auto = detect from assets, like a real release event)
         required: false
         type: choice
-        options: [auto, enhanced, official]
+        options: [auto, pro, unmodified]
         default: auto
   release:
     types: [published]
@@ -25,8 +25,8 @@ concurrency:
 
 env:
   SOURCE_REPO: ${{ github.repository }}
-  EXPECTED_BUNDLE_ID_ENHANCED: com.nuvio.pro
-  EXPECTED_BUNDLE_ID_OFFICIAL: com.nuvio.media
+  EXPECTED_BUNDLE_ID_PRO: com.nuvio.pro
+  EXPECTED_BUNDLE_ID_UNMODIFIED: com.nuvio.media
 
 jobs:
   update:
@@ -69,8 +69,8 @@ jobs:
           from pathlib import Path
 
           REPO = os.environ["SOURCE_REPO"]
-          EXPECTED_BUNDLE_ID_ENHANCED = os.environ["EXPECTED_BUNDLE_ID_ENHANCED"]
-          EXPECTED_BUNDLE_ID_OFFICIAL = os.environ["EXPECTED_BUNDLE_ID_OFFICIAL"]
+          EXPECTED_BUNDLE_ID_PRO = os.environ["EXPECTED_BUNDLE_ID_PRO"]
+          EXPECTED_BUNDLE_ID_UNMODIFIED = os.environ["EXPECTED_BUNDLE_ID_UNMODIFIED"]
           RELEASE_TAG = os.environ.get("RELEASE_TAG", "").strip()
 
           # "auto" (the default, and always what a real `release` event gets)
@@ -80,24 +80,24 @@ jobs:
           # published skips both the guessing and the retry wait entirely —
           # it already knows the asset is there.
           CHANNEL = os.environ.get("CHANNEL", "").strip().lower() or "auto"
-          if CHANNEL not in ("auto", "enhanced", "official"):
-              sys.exit(f"Unknown channel {CHANNEL!r}; expected auto, enhanced, or official.")
+          if CHANNEL not in ("auto", "pro", "unmodified"):
+              sys.exit(f"Unknown channel {CHANNEL!r}; expected auto, pro, or unmodified.")
 
           # Each release only ever carries ONE of these two variants (Full
-          # releases and Enhanced releases are published separately), so a
+          # releases and Pro releases are published separately), so a
           # release matching only one pattern is expected, not an error.
           SOURCES = [
               (
-                  Path("NuvioMobile-iOS-Enhanced.json"),
-                  re.compile(r"^nuvio-.+-enhanced-release\.ipa$", re.IGNORECASE),
-                  "Enhanced",
-                  EXPECTED_BUNDLE_ID_ENHANCED,
+                  Path("store-pro.json"),
+                  re.compile(r"^nuvio-.+-pro-release\.ipa$", re.IGNORECASE),
+                  "Pro",
+                  EXPECTED_BUNDLE_ID_PRO,
               ),
               (
-                  Path("NuvioMobile-iOS-Official.json"),
-                  re.compile(r"^nuvio-.+-official-release\.ipa$", re.IGNORECASE),
-                  "Official",
-                  EXPECTED_BUNDLE_ID_OFFICIAL,
+                  Path("store-unmodified.json"),
+                  re.compile(r"^nuvio-.+-unmodified-release\.ipa$", re.IGNORECASE),
+                  "Unmodified",
+                  EXPECTED_BUNDLE_ID_UNMODIFIED,
               ),
           ]
 
@@ -587,7 +587,7 @@ jobs:
           if not any_matched:
               sys.exit(
                   f"No asset in this release matched the "
-                  f"{'Full/Enhanced' if CHANNEL == 'auto' else CHANNEL} "
+                  f"{'Full/Pro' if CHANNEL == 'auto' else CHANNEL} "
                   "IPA naming pattern."
               )
 
@@ -600,15 +600,15 @@ jobs:
 
       - name: Commit and push AltStore sources
         run: |
-          if git diff --quiet -- NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Official.json; then
+          if git diff --quiet -- store-pro.json store-unmodified.json; then
             echo "No AltStore source changes."
             exit 0
           fi
 
-          git add NuvioMobile-iOS-Enhanced.json NuvioMobile-iOS-Official.json
+          git add store-pro.json store-unmodified.json
 
           git commit -m \
             "chore: update AltStore source(s) $(date -u +%Y-%m-%dT%H:%MZ)"
 
-          git pull --rebase origin enhanced
-          git push origin "HEAD:enhanced"
+          git pull --rebase origin pro
+          git push origin "HEAD:pro"
